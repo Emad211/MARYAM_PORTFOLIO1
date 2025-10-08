@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 35 43% 94%; /* Parchment Cream */
+    --foreground: 20 14% 4%; /* Dark Brown */
+    --card: 35 43% 97%;
+    --card-foreground: 20 14% 4%;
+    --popover: 35 43% 97%;
+    --popover-foreground: 20 14% 4%;
+    --primary: 19 56% 47%; /* Burnt Terracotta */
+    --primary-foreground: 35 43% 98%;
+    --secondary: 35 20% 88%;
+    --secondary-foreground: 19 56% 37%;
+    --muted: 35 20% 88%;
+    --muted-foreground: 20 10% 30%;
+    --accent: 98 8% 36%; /* Dark Olive Green */
+    --accent-foreground: 35 43% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 35 20% 85%;
+    --input: 35 20% 89%;
+    --ring: 19 56% 47%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 20 14% 4%; /* Dark Brown */
+    --foreground: 35 43% 94%; /* Parchment Cream */
+    --card: 20 14% 7%;
+    --card-foreground: 35 43% 94%;
+    --popover: 20 14% 7%;
+    --popover-foreground: 35 43% 94%;
+    --primary: 19 56% 47%; /* Burnt Terracotta */
+    --primary-foreground: 35 43% 98%;
+    --secondary: 20 14% 10%;
+    --secondary-foreground: 35 43% 94%;
+    --muted: 20 14% 10%;
+    --muted-foreground: 35 20% 70%;
+    --accent: 98 12% 56%; /* Lighter Olive for dark mode */
+    --accent-foreground: 20 14% 4%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 20 14% 12%;
+    --input: 20 14% 12%;
+    --ring: 19 46% 57%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* For RTL layout in Persian */
+[dir="rtl"] {
+  .group-data-\[side\=left\]\:-right-4 {
+    left: -1rem;
+    right: auto;
+  }
+  .group-data-\[side\=right\]\:left-0 {
+    right: auto;
+    left: 0;
+  }
+}
+

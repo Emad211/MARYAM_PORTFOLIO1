@@ -79,7 +79,7 @@ async function saveBlob<T>(path: string, data: T): Promise<void> {
     path,
     JSON.stringify(data, null, 2),
     {
-      access: 'private',
+      access: 'public',
       contentType: 'application/json',
       addRandomSuffix: false,
     }

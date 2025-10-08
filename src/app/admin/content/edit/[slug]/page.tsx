@@ -2,8 +2,8 @@
 import { EditContentForm } from "@/components/admin/content/edit-content-form";
 import { getAboutContent, getContactContent, getHomeContent, getTimeline } from "@/lib/cms-store";
 
-export default async function EditContentPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function EditContentPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   // Fetch all possible content pieces on the server
   const homeContent = await getHomeContent();

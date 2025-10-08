@@ -2,8 +2,9 @@
 import { EditClassForm } from "@/components/admin/classes/edit-class-form";
 import { getClasses } from "@/lib/cms-store";
 
-export default async function EditClassPage({ params }: { params: { slug: string } }) {
+export default async function EditClassPage({ params }: { params: Promise<{ slug: string }> }) {
   const classes = await getClasses();
+  const { slug } = await params;
   
-  return <EditClassForm classes={classes} slug={params.slug} />;
+  return <EditClassForm classes={classes} slug={slug} />;
 }

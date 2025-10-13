@@ -47,7 +47,7 @@ async function getReferrerType(referrer: string | null, headerStore: Readonly<He
         }
         return 'Other';
 
-  } catch (error) {
+  } catch {
     return 'Other';
   }
 }

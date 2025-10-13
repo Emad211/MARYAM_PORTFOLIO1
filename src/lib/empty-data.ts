@@ -22,7 +22,7 @@ interface CMSData {
     classes: Class[];
     timeline: TimelineEvent[];
     registrations: ClassRegistration[];
-    messages: any[]; // Using 'any' for messages as its type wasn't defined in types.ts
+    messages: unknown[]; // Using 'unknown' for messages as its type wasn't defined in types.ts
     analytics: PageView[];
 }
 

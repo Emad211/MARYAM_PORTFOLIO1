@@ -120,7 +120,7 @@ export function ContactContentForm({ contactContent: initialContent }: { contact
   const handleLocalizedInputChange = (lang: Language, field: keyof Omit<ContactContent, 'email' | 'linkedinUrl' | 'telegramUrl' | 'seo'>, value: string) => {
     setPageData(prevData => {
       const newData = { ...prevData };
-      (newData[field] as any)[lang] = value;
+      (newData[field] as Record<Language, string>)[lang] = value;
       return newData;
     });
   };

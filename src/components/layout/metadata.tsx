@@ -34,7 +34,7 @@ export function Metadata({
   let title = pageTitle || "LinguaSage";
   let description = pageDescription || "Learn languages with a master educator.";
   let imageUrl = `${domain}/og-image.png`; // A default OG image
-  let structuredData: any = {
+  let structuredData: Record<string, unknown> = {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
       url: domain,

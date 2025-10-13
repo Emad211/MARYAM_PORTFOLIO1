@@ -1,5 +1,5 @@
 import 'server-only';
-import { put, head, del, list } from '@vercel/blob';
+import { put, head } from '@vercel/blob';
 import type { 
     Post, 
     Class, 
@@ -56,8 +56,8 @@ async function getBlob<T>(path: string, emptyValue: T): Promise<T> {
         return emptyValue;
     }
     return JSON.parse(text) as T;
-  } catch (error: any) {
-    if (error && error.status === 404) {
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
       console.log(`Blob not found at ${path}. Initializing with empty data.`);
       // If the blob doesn't exist, create it with the empty value
       await saveBlob(path, emptyValue);
@@ -144,7 +144,7 @@ export const saveRegistrations = (data: ClassRegistration[]) => saveBlob(DATA_PA
 
 // Messages
 export const getMessages = () => getBlob(DATA_PATHS.messages, EMPTY_DATA.messages);
-export const saveMessages = (data: any[]) => saveBlob(DATA_PATHS.messages, data);
+export const saveMessages = (data: unknown[]) => saveBlob(DATA_PATHS.messages, data);
 
 // Analytics
 export const getAnalytics = () => getBlob(DATA_PATHS.analytics, EMPTY_DATA.analytics);

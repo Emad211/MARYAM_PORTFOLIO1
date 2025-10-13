@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { HardDrive, Pencil, UserCog } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { de, faIR } from 'date-fns/locale';
+import { getValidLocale } from "@/lib/type-utils";
 
 const settingsAdminContent = {
   en: {
@@ -84,7 +84,7 @@ const pages = [
     }
 ]
 
-const locales = { de, fa: faIR, en: undefined };
+
 
 export default function AdminSettingsPage() {
   const { language } = useLanguage();
@@ -140,7 +140,7 @@ export default function AdminSettingsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {format(new Date(page.lastModified), "PPP p", { locale: locales[language] })}
+                      {format(new Date(page.lastModified), "PPP p", { locale: getValidLocale(language) })}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="outline" size="sm" asChild>

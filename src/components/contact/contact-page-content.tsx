@@ -2,7 +2,7 @@
 "use client";
 
 import { useLanguage } from "@/context/language-context";
-import { Mail, Phone, MapPin, Linkedin, Send } from "lucide-react";
+import { Mail, MapPin, Linkedin, Send } from "lucide-react";
 import { ContactForm } from "@/components/contact/contact-form";
 import { Metadata } from '@/components/layout/metadata';
 import type { ContactContent } from "@/lib/types";

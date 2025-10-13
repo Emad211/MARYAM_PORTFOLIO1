@@ -137,7 +137,7 @@ export function HomeContentForm({ homeContent: initialContent }: { homeContent: 
   const handleLocalizedInputChange = (lang: Language, field: keyof Omit<HomeContent, 'seo'>, value: string) => {
     setPageData(prevData => {
       const newData = { ...prevData };
-      (newData[field] as any)[lang] = value;
+      (newData[field] as Record<Language, string>)[lang] = value;
       return newData;
     });
   };
@@ -155,7 +155,7 @@ export function HomeContentForm({ homeContent: initialContent }: { homeContent: 
     }));
   };
   
-  const handleFormAction = async (formData: FormData) => {
+  const handleFormAction = async () => {
     const result = await updateHomeContent(pageData);
     if (result.success) {
       toast({

@@ -19,12 +19,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { format } from 'date-fns';
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import type { getClassRegistrations } from "@/app/actions/user-actions";
 import { Button } from "../ui/button";
-import { Mail, Sparkles, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { deleteClassRegistration } from "@/app/actions/user-actions";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";

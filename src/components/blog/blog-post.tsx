@@ -2,13 +2,12 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
 import { Badge } from "@/components/ui/badge";
 import { BlogCard } from "@/components/blog/blog-card";
 import { format } from "date-fns";
-import { de, faIR } from 'date-fns/locale';
+import { getValidLocale } from "@/lib/type-utils";
 import type { Post } from "@/lib/types";
 
 const content = {
@@ -26,7 +25,7 @@ const content = {
   },
 };
 
-const locales = { de, fa: faIR, en: undefined };
+
 
 interface BlogPostProps {
   posts: Post[];
@@ -51,7 +50,7 @@ export function BlogPost({ posts, slug }: BlogPostProps) {
     .slice(0, 3);
     
   const formattedDate = format(new Date(post.date), "PPP", {
-    locale: locales[language],
+    locale: getValidLocale(language),
   });
 
   return (

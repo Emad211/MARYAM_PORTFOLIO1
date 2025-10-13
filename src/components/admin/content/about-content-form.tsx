@@ -136,7 +136,7 @@ export function AboutContentForm({
   const handleAboutInputChange = (lang: Language, field: keyof AboutContent, value: string) => {
     setAboutData(prevData => {
       const newData = { ...prevData };
-      (newData[field] as any)[lang] = value;
+      (newData[field] as Record<Language, string>)[lang] = value;
       return newData;
     });
   };
@@ -156,11 +156,14 @@ export function AboutContentForm({
   
   const handleTimelineChange = (index: number, field: 'year' | 'title' | 'description', value: string, lang?: Language) => {
     const newTimelineData = [...timelineData];
+    const item = newTimelineData[index];
+    if (!item) return; // guard
     if (field === 'year') {
-        newTimelineData[index].year = value;
+        item.year = value;
     } else {
         if (lang) {
-            newTimelineData[index][field][lang] = value;
+            item[field] = item[field] || { en: '', de: '', fa: '' };
+            (item[field] as Record<Language, string>)[lang] = value;
         }
     }
     setTimelineData(newTimelineData);

@@ -2,6 +2,8 @@
 "use client";
 
 import { useState } from "react";
+import { format } from "date-fns";
+import { getValidLocale } from "@/lib/type-utils";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
 import type { PostCategory, Post } from "@/lib/types";
@@ -17,8 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, PlusCircle, Search, Trash2 } from "lucide-react";
-import { format } from 'date-fns';
-import { de, faIR } from 'date-fns/locale';
+
 import Link from "next/link";
 import { DeleteConfirmationDialog } from "@/components/admin/delete-confirmation-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -80,7 +81,7 @@ const blogAdminContent = {
   },
 };
 
-const locales = { de, fa: faIR, en: undefined };
+
 const categories: PostCategory[] = ['language', 'culture', 'tips'];
 
 export function AdminBlogPageContent({ posts }: { posts: Post[] }) {
@@ -120,7 +121,7 @@ export function AdminBlogPageContent({ posts }: { posts: Post[] }) {
             <h1 className="text-3xl font-bold tracking-tight">{content.title}</h1>
             <p className="text-muted-foreground">{content.description}</p>
         </div>
-        <Button asChild>
+        <Button variant="outline" asChild>
           <Link href="/admin/blog/new">
             <PlusCircle className="mr-2 h-5 w-5" />
             {content.newPost}
@@ -142,7 +143,7 @@ export function AdminBlogPageContent({ posts }: { posts: Post[] }) {
               />
             </div>
             <Select value={activeCategory} onValueChange={(value) => setActiveCategory(value as PostCategory | 'all')}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by category">
                 <SelectValue placeholder={content.allCategories} />
               </SelectTrigger>
               <SelectContent>
@@ -177,11 +178,11 @@ export function AdminBlogPageContent({ posts }: { posts: Post[] }) {
                     <Badge variant="outline">{post.category}</Badge>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {format(new Date(post.date), "PPP", { locale: locales[language] })}
+                    {format(new Date(post.date), "PPP", { locale: getValidLocale(language) })}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" asChild className="mr-2">
-                      <Link href={`/admin/blog/edit/${post.slug}`}>
+                      <Link href={`/admin/blog/edit/${post.slug}`} aria-label={content.edit}>
                         <Pencil className="mr-0 sm:mr-2 h-4 w-4" />
                         <span className="hidden sm:inline">{content.edit}</span>
                       </Link>

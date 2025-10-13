@@ -94,15 +94,15 @@ const classAdminContent = {
 
 const statusMap = {
   active: {
-    label: (c: any) => c.active,
+    label: (c: { active: string }) => c.active,
     variant: "default" as const
   },
   full: {
-    label: (c: any) => c.full,
+    label: (c: { full: string }) => c.full,
     variant: "destructive" as const
   },
   inactive: {
-    label: (c: any) => c.inactive,
+    label: (c: { inactive: string }) => c.inactive,
     variant: "secondary" as const
   }
 }
@@ -147,7 +147,7 @@ export function AdminClassesPageContent({ classes }: { classes: Class[] }) {
             <h1 className="text-3xl font-bold tracking-tight">{content.title}</h1>
             <p className="text-muted-foreground">{content.description}</p>
         </div>
-        <Button asChild>
+        <Button variant="outline" asChild>
           <Link href="/admin/classes/new">
             <PlusCircle className="mr-2 h-5 w-5" />
             {content.newClass}
@@ -159,7 +159,7 @@ export function AdminClassesPageContent({ classes }: { classes: Class[] }) {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Select value={activeType} onValueChange={(value) => setActiveType(value as ClassType | 'all')}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by type">
                 <SelectValue placeholder={content.allTypes} />
               </SelectTrigger>
               <SelectContent>
@@ -170,7 +170,7 @@ export function AdminClassesPageContent({ classes }: { classes: Class[] }) {
               </SelectContent>
             </Select>
             <Select value={activeLevel} onValueChange={(value) => setActiveLevel(value as ClassLevel | 'all')}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by level">
                 <SelectValue placeholder={content.allLevels} />
               </SelectTrigger>
               <SelectContent>
@@ -219,7 +219,7 @@ export function AdminClassesPageContent({ classes }: { classes: Class[] }) {
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" asChild className="mr-2">
-                      <Link href={`/admin/classes/edit/${classInfo.slug}`}>
+                      <Link href={`/admin/classes/edit/${classInfo.slug}`} aria-label={content.edit}>
                         <Pencil className="mr-0 sm:mr-2 h-4 w-4" />
                         <span className="hidden sm:inline">{content.edit}</span>
                       </Link>

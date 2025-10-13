@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useLanguage } from "@/context/language-context";
 import type { Class, ClassLevel, ClassType } from "@/lib/types";
 import { ClassCard } from "@/components/classes/class-card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 

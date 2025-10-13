@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaSage Test Runner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #B85C38, #F5F0E8);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .test-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e1e5e9;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .test-body {
+            padding: 20px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #B85C38, #d4633a);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #6c757d, #858585);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #34ce57);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(45deg, #ffc107, #ffcd39);
+            color: #212529;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .instructions h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-right: 20px;
+        }
+        
+        .instructions li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        
+        .site-info {
+            background: #f0f8ff;
+            border: 2px solid #4a90e2;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .site-info h3 {
+            color: #4a90e2;
+            margin-bottom: 15px;
+        }
+        
+        .site-link {
+            display: inline-block;
+            background: #4a90e2;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        
+        .site-link:hover {
+            background: #357abd;
+        }
+        
+        .admin-credentials {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .admin-credentials h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .credential {
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+            border: 1px solid #ddd;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 LinguaSage Test Runner</h1>
+            <p>مجموعه تست‌های جامع برای سایت آموزش زبان آلمانی</p>
+        </div>
+        
+        <div class="content">
+            <div class="site-info">
+                <h3>🌐 دسترسی به سایت</h3>
+                <a href="http://localhost:9002" target="_blank" class="site-link">🏠 صفحه اصلی</a>
+                <a href="http://localhost:9002/admin" target="_blank" class="site-link">⚙️ پنل ادمین</a>
+                <a href="http://localhost:9002/login" target="_blank" class="site-link">🔐 ورود</a>
+            </div>
+            
+            <div class="admin-credentials">
+                <h4>🔑 اطلاعات ورود ادمین:</h4>
+                <div class="credential">📧 Email: admin@example.com</div>
+                <div class="credential">🔒 Password: password</div>
+            </div>
+            
+            <div class="test-section">
+                <div class="test-header">
+                    🚀 تست‌های خودکار
+                </div>
+                <div class="test-body">
+                    <p style="margin-bottom: 15px;">تست‌های جاوااسکریپتی که به طور خودکار سایت را بررسی می‌کنند:</p>
+                    
+                    <button class="btn" onclick="runQuickTest()">⚡ تست سریع</button>
+                    <button class="btn" onclick="runFullTest()">🔍 تست کامل سایت</button>
+                    <button class="btn" onclick="runAdminTest()">👨‍💼 تست پنل ادمین</button>
+                    <button class="btn" onclick="runFormTest()">📝 تست فرم‌ها</button>
+                    
+                    <div class="instructions">
+                        <h3>📋 نحوه استفاده:</h3>
+                        <ol>
+                            <li>ابتدا سایت را در تب جدید باز کنید</li>
+                            <li>Developer Tools را باز کنید (F12)</li>
+                            <li>روی دکمه‌های بالا کلیک کنید</li>
+                            <li>نتایج را در Console مشاهده کنید</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="test-section">
+                <div class="test-header">
+                    📋 تست دستی
+                </div>
+                <div class="test-body">
+                    <p style="margin-bottom: 15px;">چک‌لیست کاملی برای بررسی دستی تمام امکانات:</p>
+                    
+                    <button class="btn btn-secondary" onclick="openManualChecklist()">📄 باز کردن چک‌لیست</button>
+                    
+                    <div class="instructions">
+                        <h3>🎯 موارد تست دستی:</h3>
+                        <ol>
+                            <li>صفحه اصلی و navigation</li>
+                            <li>سیستم چندزبانه (فارسی/آلمانی/انگلیسی)</li>
+                            <li>تم‌های تیره و روشن</li>
+                            <li>فرم‌های تماس و ثبت‌نام</li>
+                            <li>بخش وبلاگ و کلاس‌ها</li>
+                            <li>پنل ادمین و CMS</li>
+                            <li>Responsive design</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="test-section">
+                <div class="test-header">
+                    🛠️ ابزارهای توسعه
+                </div>
+                <div class="test-body">
+                    <p style="margin-bottom: 15px;">ابزارهای مفید برای debugging و بررسی:</p>
+                    
+                    <button class="btn btn-warning" onclick="openDevTools()">🔧 Developer Tools</button>
+                    <button class="btn btn-warning" onclick="checkConsole()">📊 بررسی Console</button>
+                    <button class="btn btn-warning" onclick="checkNetwork()">🌐 بررسی Network</button>
+                    
+                    <div class="instructions">
+                        <h3>🔍 بررسی‌های مهم:</h3>
+                        <ol>
+                            <li>خطاهای JavaScript در Console</li>
+                            <li>درخواست‌های ناموفق در Network</li>
+                            <li>Performance و loading time</li>
+                            <li>SEO و Accessibility</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h3 style="color: #6c757d; margin-bottom: 10px;">✨ آماده برای تست!</h3>
+                <p style="color: #6c757d;">سایت LinguaSage بر روی پورت 9002 در حال اجرا است</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load test scripts
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        async function runQuickTest() {
+            try {
+                await loadScript('./quick-test.js');
+                const newWindow = window.open('http://localhost:9002', '_blank');
+                if (newWindow) {
+                    setTimeout(() => {
+                        newWindow.console.log('اجرای تست سریع...');
+                        // Test will auto-run
+                    }, 2000);
+                    alert('تست سریع شروع شد! نتایج را در Console مشاهده کنید.');
+                } else {
+                    alert('لطفاً popup blocker را غیرفعال کرده و دوباره امتحان کنید.');
+                }
+            } catch (error) {
+                alert('خطا در بارگیری تست: ' + error.message);
+            }
+        }
+
+        async function runFullTest() {
+            try {
+                const newWindow = window.open('http://localhost:9002', '_blank');
+                if (newWindow) {
+                    alert('سایت باز شد. حالا:\n1. Developer Tools را باز کنید (F12)\n2. در Console تایپ کنید:\nconst tester = new LinguaSageTestSuite(); tester.runAllTests();');
+                }
+            } catch (error) {
+                alert('خطا: ' + error.message);
+            }
+        }
+
+        async function runAdminTest() {
+            try {
+                const newWindow = window.open('http://localhost:9002/login', '_blank');
+                if (newWindow) {
+                    alert('صفحه ورود باز شد. حالا:\n1. وارد شوید (admin@example.com / password)\n2. Developer Tools را باز کنید\n3. در Console تایپ کنید:\nconst adminTester = new AdminPanelTestSuite(); adminTester.runAllAdminTests();');
+                }
+            } catch (error) {
+                alert('خطا: ' + error.message);
+            }
+        }
+
+        async function runFormTest() {
+            try {
+                const newWindow = window.open('http://localhost:9002/contact', '_blank');
+                if (newWindow) {
+                    alert('صفحه تماس باز شد. حالا:\n1. Developer Tools را باز کنید (F12)\n2. در Console تایپ کنید:\nconst formTester = new FormTestSuite(); formTester.runAllFormTests();');
+                }
+            } catch (error) {
+                alert('خطا: ' + error.message);
+            }
+        }
+
+        function openManualChecklist() {
+            window.open('./manual-test-checklist.md', '_blank');
+        }
+
+        function openDevTools() {
+            alert('برای باز کردن Developer Tools:\n\nChrome/Edge: F12 یا Ctrl+Shift+I\nFirefox: F12 یا Ctrl+Shift+I\nSafari: Cmd+Option+I\n\nسپس روی تب Console کلیک کنید.');
+        }
+
+        function checkConsole() {
+            const newWindow = window.open('http://localhost:9002', '_blank');
+            if (newWindow) {
+                alert('سایت باز شد. حالا:\n1. F12 برای Developer Tools\n2. تب Console را انتخاب کنید\n3. به دنبال خطاهای قرمز رنگ بگردید');
+            }
+        }
+
+        function checkNetwork() {
+            const newWindow = window.open('http://localhost:9002', '_blank');
+            if (newWindow) {
+                alert('سایت باز شد. حالا:\n1. F12 برای Developer Tools\n2. تب Network را انتخاب کنید\n3. صفحه را refresh کنید\n4. درخواست‌های قرمز (ناموفق) را بررسی کنید');
+            }
+        }
+
+        // Check if server is running
+        fetch('http://localhost:9002')
+            .then(() => {
+                console.log('✅ سرور در حال اجرا است');
+            })
+            .catch(() => {
+                alert('❌ سرور در حال اجرا نیست!\n\nلطفاً ابتدا دستور زیر را اجرا کنید:\nnpm run dev');
+            });
+    </script>
+</body>
+</html>

@@ -37,12 +37,12 @@ export async function saveContactMessage(data: Omit<ContactMessage, 'id' | 'subm
 }
 
 export async function getContactMessages(): Promise<ContactMessage[]> {
-    return await getMessages();
+    return (await getMessages()) as ContactMessage[];
 }
 
 export async function deleteContactMessage(id: string) {
     try {
-        const messages = await getMessages();
+        const messages = (await getMessages()) as ContactMessage[];
         const updatedMessages = messages.filter(message => message.id !== id);
         await saveMessages(updatedMessages);
         

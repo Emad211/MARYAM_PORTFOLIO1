@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
 import { format } from "date-fns";
-import { de, faIR } from 'date-fns/locale';
+import { getValidLocale } from "@/lib/type-utils";
 
 interface BlogCardProps {
   post: Post;
@@ -22,13 +22,11 @@ const cardContent = {
   fa: { readMore: "بیشتر بخوانید" }
 }
 
-const locales = { de, fa: faIR, en: undefined };
-
 export function BlogCard({ post }: BlogCardProps) {
   const { language } = useLanguage();
   const content = cardContent[language];
   const formattedDate = format(new Date(post.date), "PPP", {
-    locale: locales[language],
+    locale: getValidLocale(language),
   });
 
   return (

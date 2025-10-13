@@ -37,7 +37,7 @@ interface AuthProviderProps {
 export const AuthProvider = ({children, initialAdminUser, initialContactContent, isAuthenticated}: AuthProviderProps) => {
   const [user, setUser] = useState<MockUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(initialAdminUser);
+  const [adminUser] = useState<AdminUser | null>(initialAdminUser);
 
   useEffect(() => {
     // The authentication state is now passed from the server layout.

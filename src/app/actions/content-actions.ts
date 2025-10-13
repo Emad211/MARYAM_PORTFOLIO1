@@ -7,18 +7,14 @@ import {
   savePosts,
   getClasses,
   saveClasses,
-  getTimeline,
   saveTimeline,
-  getHomeContent,
   saveHomeContent,
-  getAboutContent,
   saveAboutContent,
-  getContactContent,
   saveContactContent,
   getAdminUser,
   saveAdminUser
 } from '@/lib/cms-store';
-import type { HomeContent, Post, Class, TimelineEvent, AboutContent, ContactContent, AdminUser, Language, LocalizedString, PostCategory, ClassType, ClassLevel, ClassStatus } from '@/lib/types';
+import type { HomeContent, Post, Class, TimelineEvent, AboutContent, ContactContent, AdminUser, Language, PostCategory, ClassType, ClassLevel, ClassStatus } from '@/lib/types';
 
 // --- Utility Functions ---
 
@@ -86,7 +82,7 @@ export async function updateTimeline(newTimeline: TimelineEvent[]) {
 
 // --- Post Management ---
 
-export async function createPost(prevState: any, formData: FormData) {
+export async function createPost(prevState: unknown, formData: FormData) {
     const titleEn = formData.get('title-en') as string;
     if (!titleEn) {
         return { success: false, message: "title_required" };
@@ -184,7 +180,7 @@ export async function deletePost(slug: string) {
 
 // --- Class Management ---
 
-export async function createClass(prevState: any, formData: FormData) {
+export async function createClass(prevState: unknown, formData: FormData) {
     const titleEn = formData.get('title-en') as string;
      if (!titleEn) {
         return { success: false, message: "title_required" };
@@ -201,41 +197,43 @@ export async function createClass(prevState: any, formData: FormData) {
         fa: (formData.get('prerequisites-fa') as string || '').split('\n').map(p => p.trim()).filter(Boolean),
     };
 
-    const classData: Omit<Class, 'slug'> = {
-        title: { en: '', de: '', fa: '' },
-        excerpt: { en: '', de: '', fa: '' },
-        description: { en: '', de: '', fa: '' },
-        type: formData.get('type') as ClassType,
-        level: formData.get('level') as ClassLevel,
-        status: formData.get('status') as ClassStatus,
-        imageUrl: formData.get('imageUrl') as string,
-        imageHint: formData.get('imageHint') as string,
-        schedule: {
-            days: { en: '', de: '', fa: '' },
-            time: formData.get('scheduleTime') as string,
-        },
-        objectives: [],
-        prerequisites: [],
-        seo: {
-            title: { en: '', de: '', fa: '' },
-            description: { en: '', de: '', fa: '' },
-        },
-        price: formData.get('price') ? Number(formData.get('price')) : undefined,
-        maxStudents: formData.get('maxStudents') ? Number(formData.get('maxStudents')) : undefined,
-    };
+    const classData: Partial<Omit<Class, 'slug'>> = {};
+
+    // Ensure nested objects exist
+    classData.title = { en: '', de: '', fa: '' };
+    classData.excerpt = { en: '', de: '', fa: '' };
+    classData.description = { en: '', de: '', fa: '' };
+    classData.type = formData.get('type') as ClassType;
+    classData.level = formData.get('level') as ClassLevel;
+    classData.status = formData.get('status') as ClassStatus;
+    classData.imageUrl = (formData.get('imageUrl') as string) || '';
+    classData.imageHint = (formData.get('imageHint') as string) || '';
+    classData.schedule = { days: { en: '', de: '', fa: '' }, time: (formData.get('scheduleTime') as string) || '' };
+    classData.objectives = [];
+    classData.prerequisites = [];
+    classData.seo = { title: { en: '', de: '', fa: '' }, description: { en: '', de: '', fa: '' } };
+        const priceVal = formData.get('price');
+            if (priceVal !== null && priceVal !== '') {
+                classData.price = Number(priceVal);
+            }
+        const maxStudentsVal = formData.get('maxStudents');
+            if (maxStudentsVal !== null && maxStudentsVal !== '') {
+                classData.maxStudents = Number(maxStudentsVal);
+            }
     
     languages.forEach(lang => {
-        classData.title[lang] = formData.get(`title-${lang}`) as string;
-        classData.excerpt[lang] = formData.get(`excerpt-${lang}`) as string;
-        classData.description[lang] = formData.get(`description-${lang}`) as string;
-        classData.schedule.days[lang] = formData.get(`schedule-days-${lang}`) as string;
-        classData.seo.title[lang] = formData.get(`seo-title-${lang}`) as string;
-        classData.seo.description[lang] = formData.get(`seo-desc-${lang}`) as string;
+        // Non-null assertion is safe here because we initialized these fields above
+        classData.title![lang] = (formData.get(`title-${lang}`) as string) || '';
+        classData.excerpt![lang] = (formData.get(`excerpt-${lang}`) as string) || '';
+        classData.description![lang] = (formData.get(`description-${lang}`) as string) || '';
+        classData.schedule!.days[lang] = (formData.get(`schedule-days-${lang}`) as string) || '';
+        classData.seo!.title[lang] = (formData.get(`seo-title-${lang}`) as string) || '';
+        classData.seo!.description[lang] = (formData.get(`seo-desc-${lang}`) as string) || '';
     });
 
     const maxObjectives = Math.max(...Object.values(objectives).map(arr => arr.length));
     for (let i = 0; i < maxObjectives; i++) {
-        classData.objectives.push({
+        classData.objectives!.push({
             en: objectives.en[i] || '',
             de: objectives.de[i] || '',
             fa: objectives.fa[i] || '',
@@ -244,7 +242,7 @@ export async function createClass(prevState: any, formData: FormData) {
 
     const maxPrerequisites = Math.max(...Object.values(prerequisites).map(arr => arr.length));
     for (let i = 0; i < maxPrerequisites; i++) {
-        classData.prerequisites.push({
+        classData.prerequisites!.push({
             en: prerequisites.en[i] || '',
             de: prerequisites.de[i] || '',
             fa: prerequisites.fa[i] || '',
@@ -257,7 +255,7 @@ export async function createClass(prevState: any, formData: FormData) {
         if (classes.find(c => c.slug === slug)) {
             return { success: false, message: `A class with slug "${slug}" already exists.` };
         }
-        const newClass: Class = { ...classData, slug };
+    const newClass: Class = { ...(classData as Omit<Class, 'slug'>), slug };
         await saveClasses([newClass, ...classes]);
         
         revalidatePath('/classes');

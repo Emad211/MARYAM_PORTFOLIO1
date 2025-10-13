@@ -5,7 +5,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Users, Wallet, Clock } from "lucide-react";
+import { CheckCircle2, Users, Clock } from "lucide-react";
 import { RegistrationForm } from "@/components/classes/registration-form";
 import type { Class } from "@/lib/types";
 

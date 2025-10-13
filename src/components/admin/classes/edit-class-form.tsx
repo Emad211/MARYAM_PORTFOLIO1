@@ -150,7 +150,7 @@ export function EditClassForm({ classes, slug }: { classes: Class[], slug: strin
     }
   }, [slug, classes]);
 
-  const handleInputChange = (field: keyof Class, value: any) => {
+  const handleInputChange = (field: keyof Class, value: string | number | boolean | ClassLevel | ClassStatus | Date | undefined) => {
     if (classData) {
       setClassData({ ...classData, [field]: value });
     }
@@ -206,13 +206,41 @@ export function EditClassForm({ classes, slug }: { classes: Class[], slug: strin
   const handleFormAction = async () => {
     if (!classData) return;
     
-    const dataToSave = {
+    const dataToSaveRaw: Record<string, unknown> = {
       ...classData,
-      price: classData.price === undefined || classData.price === null || isNaN(Number(classData.price)) ? undefined : Number(classData.price),
-      maxStudents: classData.maxStudents === undefined || classData.maxStudents === null || isNaN(Number(classData.maxStudents)) ? undefined : Number(classData.maxStudents),
+    };
+    if (classData.price !== undefined && classData.price !== null && !isNaN(Number(classData.price))) {
+      dataToSaveRaw.price = Number(classData.price);
+    } else {
+      delete dataToSaveRaw.price;
+    }
+    if (classData.maxStudents !== undefined && classData.maxStudents !== null && !isNaN(Number(classData.maxStudents))) {
+      dataToSaveRaw.maxStudents = Number(classData.maxStudents);
+    } else {
+      delete dataToSaveRaw.maxStudents;
     }
 
-    const result = await updateClass(dataToSave);
+    // Rebuild a proper Class object from classData to satisfy strict typing
+    const classToSave: Class = {
+      slug: classData.slug,
+      title: classData.title,
+      excerpt: classData.excerpt,
+      description: classData.description,
+      type: classData.type,
+      level: classData.level,
+      status: classData.status,
+      objectives: classData.objectives,
+      prerequisites: classData.prerequisites,
+      imageUrl: classData.imageUrl,
+      imageHint: classData.imageHint,
+      schedule: classData.schedule,
+      seo: classData.seo,
+      // price and maxStudents are optional and handled below
+      ...(dataToSaveRaw.price !== undefined ? { price: dataToSaveRaw.price as number } : {}),
+      ...(dataToSaveRaw.maxStudents !== undefined ? { maxStudents: dataToSaveRaw.maxStudents as number } : {}),
+    } as Class;
+
+    const result = await updateClass(classToSave);
     if (result.success) {
       toast({
         title: content.success,

@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { getAnalyticsData } from "@/app/actions/analytics-actions";
-import { Users, Eye, TrendingUp, BarChart } from "lucide-react";
+import { Users, Eye, TrendingUp } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -73,7 +73,7 @@ export function AnalyticsDashboard({ initialData }: { initialData: AnalyticsData
           <CardContent>
             <div className="text-2xl font-bold">{initialData.viewsToday.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-                <span className={initialData.dailyChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}>
+                <span className={initialData.dailyChangePercent >= 0 ? 'text-green-700' : 'text-red-500'}>
                     {initialData.dailyChangePercent >= 0 ? '+' : ''}
                     {initialData.dailyChangePercent.toFixed(1)}%
                 </span>

@@ -147,6 +147,7 @@ export function RegistrationForm({ classInfo }: { classInfo: Class }) {
   async function onSubmit(data: FormData) {
     const registrationData = {
       ...data,
+      motivation: data.motivation ?? '',
       className: classInfo.title[language as Language],
       classSlug: classInfo.slug,
     };
@@ -170,9 +171,9 @@ export function RegistrationForm({ classInfo }: { classInfo: Class }) {
   }
   
   const stepVariants = {
-    hidden: { opacity: 0, x: 50, position: 'absolute' as 'absolute' },
-    visible: { opacity: 1, x: 0, position: 'relative' as 'relative' },
-    exit: { opacity: 0, x: -50, position: 'absolute' as 'absolute' },
+    hidden: { opacity: 0, x: 50, position: 'absolute' as const },
+    visible: { opacity: 1, x: 0, position: 'relative' as const },
+    exit: { opacity: 0, x: -50, position: 'absolute' as const },
   };
 
   return (

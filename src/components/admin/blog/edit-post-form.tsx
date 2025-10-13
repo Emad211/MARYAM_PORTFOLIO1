@@ -134,7 +134,7 @@ export function EditPostForm({ posts, slug }: { posts: Post[], slug: string }) {
     }
   }, [slug, posts]);
 
-  const handleInputChange = (field: keyof Post, value: any) => {
+  const handleInputChange = (field: keyof Post, value: string | boolean | PostCategory) => {
     if (postData) {
       setPostData({ ...postData, [field]: value });
     }

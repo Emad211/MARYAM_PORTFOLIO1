@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -34,6 +37,9 @@ jobs:
 
       - name: Run Playwright visual & axe tests
         run: npx playwright test tests/e2e/admin-visual.spec.ts --config=playwright.config.ts --reporter=list
+
+      - name: Parse axe reports
+        run: node scripts/parse-axe-reports.js
 
       - name: Upload Playwright reports
         uses: actions/upload-artifact@v4

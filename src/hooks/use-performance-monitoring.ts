@@ -1,12 +1,9 @@
 // Performance Monitoring Hook
 import { useEffect } from 'react';
 
-interface PerformanceMetrics {
-  fcp: number;
-  lcp: number;
-  cls: number;
-  fid: number;
-  ttfb: number;
+interface LayoutShift extends PerformanceEntry {
+  hadRecentInput: boolean;
+  value: number;
 }
 
 export const usePerformanceMonitoring = () => {
@@ -41,8 +38,9 @@ export const usePerformanceMonitoring = () => {
       let clsValue = 0;
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (!(entry as any).hadRecentInput) {
-            clsValue += (entry as any).value;
+          const layoutShift = entry as LayoutShift;
+          if (!layoutShift.hadRecentInput) {
+            clsValue += layoutShift.value;
           }
         }
         console.log('CLS:', clsValue);
@@ -89,7 +87,7 @@ export const usePerformanceMonitoring = () => {
 };
 
 // Web Vitals Reporter
-export const reportWebVitals = (metric: any) => {
+export const reportWebVitals = (metric: { name: string; value: number; id: string }) => {
   console.log('Web Vital:', metric);
   
   // اینجا می‌توانید metrics را به Google Analytics یا سرویس analytics دیگری ارسال کنید

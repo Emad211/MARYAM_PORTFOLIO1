@@ -1,18 +1,22 @@
 
 import { ClassDetails } from "@/components/classes/class-details";
 import { getClasses } from "@/lib/cms-store";
-import { getMyEnrollments } from "@/app/actions/enrollment-actions";
 
-// This is now a Server Component
+// Fully public/cacheable: only the class content (identical for every visitor)
+// is fetched on the server. The signed-in student's own enrollment state is
+// per-user, so it's fetched client-side inside <EnrollCta> — keeping this page
+// out of dynamic rendering. Regenerates on admin edit (revalidatePath) plus a
+// time-based safety net.
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const classes = await getClasses();
+  return classes.map((c) => ({ slug: c.slug }));
+}
+
 export default async function ClassDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const classes = await getClasses();
 
-  // Fetch classes (public) and the caller's own enrollments (RLS-scoped —
-  // empty for anonymous visitors and admins) in parallel. The student's
-  // enrollment for THIS class, if any, drives the enroll CTA's state.
-  const [classes, myEnrollments] = await Promise.all([getClasses(), getMyEnrollments()]);
-  const myEnrollment = myEnrollments.find((e) => e.classSlug === slug) ?? null;
-
-  // Pass the fetched data and params as props to the client component
-  return <ClassDetails classes={classes} slug={slug} myEnrollment={myEnrollment} />;
+  return <ClassDetails classes={classes} slug={slug} />;
 }

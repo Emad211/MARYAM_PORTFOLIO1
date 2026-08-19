@@ -2,7 +2,10 @@
 import { ClassesPageContent } from "@/components/classes/classes-page-content";
 import { getClasses } from "@/lib/cms-store";
 
-// This is now a Server Component
+// ISR: cached, regenerated on admin edit / enrollment status change
+// (revalidatePath('/classes')) or hourly.
+export const revalidate = 3600;
+
 export default async function ClassesPage() {
   // Fetch data on the server
   const classes = await getClasses();

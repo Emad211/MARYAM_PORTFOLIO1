@@ -2,7 +2,9 @@
 import { BlogPageContent } from "@/components/blog/blog-page-content";
 import { getPosts } from "@/lib/cms-store";
 
-// This is now a Server Component
+// ISR: cached, regenerated on admin edit (revalidatePath('/blog')) or hourly.
+export const revalidate = 3600;
+
 export default async function BlogPage() {
   // Fetch data on the server
   const posts = await getPosts();

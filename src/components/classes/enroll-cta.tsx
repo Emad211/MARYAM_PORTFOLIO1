@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/language-context';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +22,7 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { CheckCircle2, Clock } from 'lucide-react';
-import { enrollInClass, cancelEnrollment } from '@/app/actions/enrollment-actions';
+import { enrollInClass, cancelEnrollment, getMyEnrollments } from '@/app/actions/enrollment-actions';
 import type { Class, Enrollment } from '@/lib/types';
 
 const content = {
@@ -142,29 +141,55 @@ function isLive(e: Enrollment | null): e is Enrollment {
 
 export function EnrollCta({
     classInfo,
-    myEnrollment,
 }: {
     classInfo: Class;
-    myEnrollment: Enrollment | null;
 }) {
     const { language } = useLanguage();
     const { user, loading } = useAuth();
     const t = content[language];
-    const router = useRouter();
-
-    // Seed from the server-provided enrollment and re-sync whenever the server
-    // component refreshes (revalidatePath after enroll/cancel/admin decision).
-    const [enrollment, setEnrollment] = useState<Enrollment | null>(myEnrollment);
-    useEffect(() => {
-        setEnrollment(myEnrollment);
-    }, [myEnrollment]);
-
-    if (loading) {
-        return <Skeleton className="h-40 w-full" />;
-    }
 
     const isStudent = user?.role === 'student';
     const isAdmin = user?.role === 'admin';
+
+    // The student's own enrollment for THIS class is per-user data, so it's
+    // fetched client-side here (this component already resolves auth in the
+    // browser). Keeping it out of the server component is what lets the class
+    // page render statically. `enrollmentLoading` guards the first fetch so we
+    // don't flash the enroll form before the real status is known.
+    const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+    const [enrollmentLoading, setEnrollmentLoading] = useState(true);
+
+    // getMyEnrollments is RLS-scoped: it returns the student's own rows and an
+    // empty list for anon/admin. Used for the initial load and to reconcile
+    // after enroll/cancel (the page itself no longer re-fetches per user).
+    const refetch = useCallback(async () => {
+        const rows = await getMyEnrollments();
+        setEnrollment(rows.find((e) => e.classSlug === classInfo.slug) ?? null);
+    }, [classInfo.slug]);
+
+    useEffect(() => {
+        let active = true;
+        if (loading) return; // wait for auth to settle
+        if (!isStudent) {
+            // anon/admin never have an enrollment — skip the round-trip.
+            setEnrollment(null);
+            setEnrollmentLoading(false);
+            return;
+        }
+        setEnrollmentLoading(true);
+        getMyEnrollments().then((rows) => {
+            if (!active) return;
+            setEnrollment(rows.find((e) => e.classSlug === classInfo.slug) ?? null);
+            setEnrollmentLoading(false);
+        });
+        return () => {
+            active = false;
+        };
+    }, [loading, isStudent, classInfo.slug]);
+
+    if (loading || (isStudent && enrollmentLoading)) {
+        return <Skeleton className="h-40 w-full" />;
+    }
 
     // --- Anonymous: prompt to create an account / sign in --------------------
     if (!user) {
@@ -221,7 +246,7 @@ export function EnrollCta({
         <EnrollForm
             classSlug={classInfo.slug}
             t={t}
-            onEnrolled={() => router.refresh()}
+            onEnrolled={refetch}
         />
     );
 }
@@ -311,7 +336,6 @@ function EnrollmentStatusCard({
     onCancelled: () => void;
 }) {
     const { toast } = useToast();
-    const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
     const approved = enrollment.status === 'approved';
@@ -322,7 +346,6 @@ function EnrollmentStatusCard({
             if (result.success) {
                 toast({ description: t.cancel_success });
                 onCancelled();
-                router.refresh();
             } else {
                 toast({ variant: 'destructive', description: t.cancel_failed });
             }

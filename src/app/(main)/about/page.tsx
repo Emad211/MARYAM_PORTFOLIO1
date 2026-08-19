@@ -2,7 +2,9 @@
 import { AboutContent } from "@/components/about/about-content";
 import { getAboutContent, getTimeline } from "@/lib/cms-store";
 
-// This is now a Server Component
+// ISR: cached, regenerated on admin edit (revalidatePath('/about')) or hourly.
+export const revalidate = 3600;
+
 export default async function AboutPage() {
   // Fetch data on the server
   const aboutContent = await getAboutContent();

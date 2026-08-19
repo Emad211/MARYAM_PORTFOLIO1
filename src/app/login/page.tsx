@@ -1,7 +1,7 @@
 
 'use client';
 
-import {useState} from 'react';
+import {Suspense, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter, useSearchParams} from 'next/navigation';
@@ -77,8 +77,10 @@ function Logo() {
   )
 }
 
-// This page remains a Client Component as it handles user interaction (login form).
-export default function LoginPage() {
+// The interactive form lives in its own component because it reads
+// useSearchParams(); Next requires that to sit inside a Suspense boundary so the
+// route can be prerendered instead of bailing the whole page to client rendering.
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -183,5 +185,15 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// This page remains a Client Component as it handles user interaction (login
+// form). The Suspense boundary satisfies Next's requirement for useSearchParams.
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen w-full bg-background" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

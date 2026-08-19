@@ -7,7 +7,7 @@ import { useLanguage } from "@/context/language-context";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Users, Clock } from "lucide-react";
 import { EnrollCta } from "@/components/classes/enroll-cta";
-import type { Class, Enrollment } from "@/lib/types";
+import type { Class } from "@/lib/types";
 
 const content = {
   en: {
@@ -66,10 +66,9 @@ const statusMap = {
 interface ClassDetailsProps {
   classes: Class[];
   slug: string;
-  myEnrollment: Enrollment | null;
 }
 
-export function ClassDetails({ classes, slug, myEnrollment }: ClassDetailsProps) {
+export function ClassDetails({ classes, slug }: ClassDetailsProps) {
   const { language } = useLanguage();
 
   if (!classes) {
@@ -167,7 +166,7 @@ export function ClassDetails({ classes, slug, myEnrollment }: ClassDetailsProps)
                  )}
               </div>
               <hr className="my-6" />
-              <EnrollCta classInfo={classInfo} myEnrollment={myEnrollment} />
+              <EnrollCta classInfo={classInfo} />
             </div>
           </div>
         </div>

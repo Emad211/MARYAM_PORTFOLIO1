@@ -1,5 +1,5 @@
 import 'server-only';
-import { createClient } from './supabase/server';
+import { createClient, createPublicClient } from './supabase/server';
 import type {
     Post,
     Class,
@@ -69,7 +69,7 @@ const EMPTY_DATA = getEmptyCMSData();
 // ---------------------------------------------------------------------------
 
 async function getSiteContent<T>(key: 'home' | 'about' | 'contact', fallback: T): Promise<T> {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
         .from('site_content')
         .select('content')
@@ -111,7 +111,7 @@ export const saveContactContent = (data: ContactContent) => saveSiteContent('con
 // ---------------------------------------------------------------------------
 
 export async function getPosts(): Promise<Post[]> {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
         .from('posts')
         .select('*')
@@ -153,7 +153,7 @@ export async function savePosts(data: Post[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function getClasses(): Promise<Class[]> {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
         .from('classes')
         .select('*')
@@ -193,7 +193,7 @@ export async function saveClasses(data: Class[]): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export async function getTimeline(): Promise<TimelineEvent[]> {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
         .from('timeline_events')
         .select('*')

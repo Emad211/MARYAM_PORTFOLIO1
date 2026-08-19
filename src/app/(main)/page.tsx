@@ -2,7 +2,10 @@
 import { HomePageContent } from "@/components/home/home-page-content";
 import { getHomeContent, getPosts } from "@/lib/cms-store";
 
-// This is now a Server Component
+// ISR: render once, serve from cache, regenerate on admin edit (revalidatePath)
+// or hourly as a safety net. Content is identical for every visitor.
+export const revalidate = 3600;
+
 export default async function HomePage() {
   // Fetch data on the server
   const homeContent = await getHomeContent();

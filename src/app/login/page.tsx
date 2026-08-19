@@ -16,8 +16,8 @@ import { ArrowLeft } from 'lucide-react';
 
 const loginContent = {
     en: {
-        title: 'Admin Login',
-        description: 'Welcome back. Please sign in to manage Fluentia.',
+        title: 'Sign In',
+        description: 'Welcome back. Sign in to your Fluentia account.',
         emailLabel: 'Email',
         passwordLabel: 'Password',
         loginButton: 'Login',
@@ -25,12 +25,14 @@ const loginContent = {
         errorTitle: 'Login Failed',
         errorMessage: 'Invalid email or password. Please try again.',
         successTitle: 'Login Successful',
-        successMessage: 'Redirecting to the admin dashboard...',
-        backToSite: 'Back to Site'
+        successMessage: 'Redirecting...',
+        backToSite: 'Back to Site',
+        noAccount: "Don't have an account?",
+        signUp: 'Sign up'
     },
     de: {
-        title: 'Admin-Anmeldung',
-        description: 'Willkommen zurück. Bitte melden Sie sich an, um Fluentia zu verwalten.',
+        title: 'Anmelden',
+        description: 'Willkommen zurück. Melden Sie sich bei Ihrem Fluentia-Konto an.',
         emailLabel: 'Email',
         passwordLabel: 'Passwort',
         loginButton: 'Anmelden',
@@ -38,12 +40,14 @@ const loginContent = {
         errorTitle: 'Anmeldung fehlgeschlagen',
         errorMessage: 'Ungültige E-Mail oder Passwort. Bitte versuchen Sie es erneut.',
         successTitle: 'Anmeldung erfolgreich',
-        successMessage: 'Weiterleitung zum Admin-Dashboard...',
-        backToSite: 'Zurück zur Seite'
+        successMessage: 'Weiterleitung...',
+        backToSite: 'Zurück zur Seite',
+        noAccount: 'Noch kein Konto?',
+        signUp: 'Registrieren'
     },
     fa: {
-        title: 'ورود مدیر',
-        description: 'خوش آمدید. لطفاً برای مدیریت Fluentia وارد شوید.',
+        title: 'ورود',
+        description: 'خوش آمدید. به حساب Fluentia خود وارد شوید.',
         emailLabel: 'ایمیل',
         passwordLabel: 'رمز عبور',
         loginButton: 'ورود',
@@ -51,8 +55,10 @@ const loginContent = {
         errorTitle: 'ورود ناموفق بود',
         errorMessage: 'ایمیل یا رمز عبور نامعتبر است. لطفاً دوباره تلاش کنید.',
         successTitle: 'ورود موفقیت‌آمیز بود',
-        successMessage: 'در حال هدایت به داشبورد مدیریت...',
-        backToSite: 'بازگشت به سایت'
+        successMessage: 'در حال هدایت...',
+        backToSite: 'بازگشت به سایت',
+        noAccount: 'حساب کاربری ندارید؟',
+        signUp: 'ثبت‌نام'
     }
 }
 
@@ -87,14 +93,17 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const success = await login(email, password);
+    const result = await login(email, password);
 
-    if (success) {
+    if (result.ok) {
       toast({
         title: content.successTitle,
         description: content.successMessage,
       });
-      const redirectUrl = searchParams.get('redirect') || '/admin';
+      // An explicit redirect target (set by the proxy) wins; otherwise route by
+      // role — admins to the dashboard, students to their area.
+      const fallback = result.role === 'student' ? '/dashboard' : '/admin';
+      const redirectUrl = searchParams.get('redirect') || fallback;
       router.push(redirectUrl);
     } else {
       toast({
@@ -157,7 +166,13 @@ export default function LoginPage() {
                 </form>
                 </CardContent>
             </Card>
-            <div className="text-center">
+            <div className="text-center space-y-4">
+                <p className="text-sm text-muted-foreground">
+                    {content.noAccount}{' '}
+                    <Link href="/signup" className="font-medium text-primary hover:underline">
+                        {content.signUp}
+                    </Link>
+                </p>
                 <Button variant="ghost" asChild>
                     <Link href="/" className="flex items-center gap-2">
                         <ArrowLeft className="h-4 w-4" />

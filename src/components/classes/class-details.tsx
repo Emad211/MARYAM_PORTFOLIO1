@@ -6,8 +6,8 @@ import { notFound } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Users, Clock } from "lucide-react";
-import { RegistrationForm } from "@/components/classes/registration-form";
-import type { Class } from "@/lib/types";
+import { EnrollCta } from "@/components/classes/enroll-cta";
+import type { Class, Enrollment } from "@/lib/types";
 
 const content = {
   en: {
@@ -66,9 +66,10 @@ const statusMap = {
 interface ClassDetailsProps {
   classes: Class[];
   slug: string;
+  myEnrollment: Enrollment | null;
 }
 
-export function ClassDetails({ classes, slug }: ClassDetailsProps) {
+export function ClassDetails({ classes, slug, myEnrollment }: ClassDetailsProps) {
   const { language } = useLanguage();
 
   if (!classes) {
@@ -166,7 +167,7 @@ export function ClassDetails({ classes, slug }: ClassDetailsProps) {
                  )}
               </div>
               <hr className="my-6" />
-              {classInfo.status === 'active' && <RegistrationForm classInfo={classInfo} />}
+              <EnrollCta classInfo={classInfo} myEnrollment={myEnrollment} />
             </div>
           </div>
         </div>

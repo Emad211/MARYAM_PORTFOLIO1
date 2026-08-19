@@ -1,14 +1,17 @@
-// Applies the committed SQL migration to the remote Supabase project via the
+// Applies the committed SQL migrations to the remote Supabase project via the
 // Management API, then verifies the resulting schema.
 //
-// The migration is idempotent (create ... if not exists / drop policy if exists
-// / create or replace / revoke+grant), so this is safe to run repeatedly.
+// Every file in supabase/migrations/*.sql is applied in ascending filename
+// order (the YYYYMMDDHHMMSS_ timestamp prefix guarantees dependency order:
+// init before add-ons). Each migration is idempotent (create ... if not exists
+// / drop policy if exists / create or replace / revoke+grant), so this is safe
+// to run repeatedly.
 //
 // Requires the Management API personal access token in the environment:
 //   SUPABASE_ACCESS_TOKEN=sbp_... node scripts/apply-schema.mjs
 // The token is a credential — never write it to a file or commit it.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -21,13 +24,7 @@ if (!token) {
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const migrationPath = join(
-  __dirname,
-  '..',
-  'supabase',
-  'migrations',
-  '20260819011441_init_cms_schema.sql'
-);
+const migrationsDir = join(__dirname, '..', 'supabase', 'migrations');
 
 async function runSql(query, label) {
   const res = await fetch(
@@ -53,10 +50,22 @@ async function runSql(query, label) {
   }
 }
 
-const sql = readFileSync(migrationPath, 'utf8');
-console.log(`Applying migration (${sql.length} bytes) to project ${PROJECT_REF} ...`);
-await runSql(sql, 'apply-migration');
-console.log('Migration applied.');
+const sql_files = readdirSync(migrationsDir)
+  .filter((f) => f.endsWith('.sql'))
+  .sort();
+
+if (sql_files.length === 0) {
+  console.error(`ERROR: no .sql migrations found in ${migrationsDir}`);
+  process.exit(1);
+}
+
+console.log(`Applying ${sql_files.length} migration(s) to project ${PROJECT_REF} ...`);
+for (const file of sql_files) {
+  const sql = readFileSync(join(migrationsDir, file), 'utf8');
+  console.log(`  - ${file} (${sql.length} bytes)`);
+  await runSql(sql, file);
+}
+console.log('Migrations applied.');
 
 console.log('\nVerifying tables + RLS ...');
 const tables = await runSql(
@@ -80,7 +89,8 @@ console.table(policies);
 const fn = await runSql(
   `select proname, prosecdef as security_definer
    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-   where n.nspname = 'public' and p.proname = 'is_admin';`,
+   where n.nspname = 'public' and p.proname in ('is_admin', 'is_student')
+   order by proname;`,
   'verify-function'
 );
 console.table(fn);

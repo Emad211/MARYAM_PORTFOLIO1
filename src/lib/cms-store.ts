@@ -10,6 +10,9 @@ import type {
     ClassRegistration,
     ContactMessage,
     PageView,
+    Profile,
+    Enrollment,
+    EnrollmentStatus,
 } from './types';
 import { getEmptyCMSData } from './empty-data';
 import {
@@ -25,12 +28,18 @@ import {
     messageToInsert,
     rowToPageView,
     pageViewToInsert,
+    rowToProfile,
+    profileToUpsert,
+    rowToEnrollment,
+    enrollmentToInsert,
     type PostRow,
     type ClassRow,
     type TimelineEventRow,
     type ClassRegistrationRow,
     type ContactMessageRow,
     type PageViewRow,
+    type ProfileRow,
+    type EnrollmentRow,
 } from './supabase/mappers';
 
 // Re-export types for convenience (kept for consumers that import from here).
@@ -45,6 +54,9 @@ export type {
     ContactMessage,
     Language,
     PageView,
+    Profile,
+    Enrollment,
+    EnrollmentStatus,
 } from './types';
 
 // Default content used only as a render-time fallback for the three page
@@ -307,4 +319,98 @@ export async function insertPageView(data: Omit<PageView, 'timestamp'>): Promise
     const supabase = await createClient();
     const { error } = await supabase.from('page_views').insert(pageViewToInsert(data));
     if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Profiles (Phase 1). One row per auth user; RLS scopes reads/writes to the
+// owner (admin may read all). Signup provisions the row via service_role, but
+// these run under the request-bound client so a signed-in user can maintain
+// their own profile too.
+// ---------------------------------------------------------------------------
+
+export async function getProfile(userId: string): Promise<Profile | null> {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Failed to load profile:', error);
+        return null;
+    }
+    return data ? rowToProfile(data as ProfileRow) : null;
+}
+
+export async function upsertProfile(
+    data: Pick<Profile, 'id' | 'name' | 'phone'> & { germanLevel?: string }
+): Promise<void> {
+    const supabase = await createClient();
+    const { error } = await supabase.from('profiles').upsert(profileToUpsert(data));
+    if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Enrollments (Phase 1). RLS scopes SELECT to the owner (student sees own,
+// admin sees all). INSERT is forced to 'pending'; a re-enrol after
+// cancel/reject flips the SAME row back to pending via upsert on the
+// unique(user_id, class_slug) constraint. Status transitions go through
+// updateEnrollmentStatus (admin approve/reject; student cancel).
+// ---------------------------------------------------------------------------
+
+export async function getEnrollments(): Promise<Enrollment[]> {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('enrollments')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+
+    if (error) {
+        console.error('Failed to load enrollments:', error);
+        return [];
+    }
+    return (data as EnrollmentRow[]).map(rowToEnrollment);
+}
+
+export async function insertEnrollment(data: {
+    userId: string;
+    classSlug: string;
+    learningGoal?: string;
+    motivation?: string;
+}): Promise<void> {
+    const supabase = await createClient();
+    // Upsert on the unique(user_id, class_slug) pair so re-enrolling after a
+    // cancellation/rejection reuses the row and resets it to 'pending'.
+    const { error } = await supabase
+        .from('enrollments')
+        .upsert(enrollmentToInsert(data), { onConflict: 'user_id,class_slug' });
+    if (error) throw error;
+}
+
+export async function updateEnrollmentStatus(
+    id: string,
+    status: EnrollmentStatus
+): Promise<void> {
+    const supabase = await createClient();
+    // `decided_at` marks an admin decision; a student cancel or re-enrol
+    // (pending) is not a decision, so it stays null.
+    const decidedAt =
+        status === 'approved' || status === 'rejected' ? new Date().toISOString() : null;
+    const { error } = await supabase
+        .from('enrollments')
+        .update({ status, decided_at: decidedAt })
+        .eq('id', id);
+    if (error) throw error;
+}
+
+export async function countApprovedEnrollments(classSlug: string): Promise<number> {
+    const supabase = await createClient();
+    const { count, error } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .eq('class_slug', classSlug)
+        .eq('status', 'approved');
+    if (error) throw error;
+    return count ?? 0;
 }

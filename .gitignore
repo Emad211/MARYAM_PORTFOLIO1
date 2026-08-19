@@ -85,3 +85,9 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local agent tooling (Claude Code / ECC / codex skills) — not part of the app
+.claude/
+.agents/
+.mcp.json
+skills-lock.json

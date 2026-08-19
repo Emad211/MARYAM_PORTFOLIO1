@@ -12,7 +12,7 @@ export function MainSidebar() {
   const menuItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/messages", label: "Messages", icon: MessageSquare },
-    { href: "/admin/registrations", label: "Registrations", icon: UserCheck },
+    { href: "/admin/registrations", label: "Enrollments", icon: UserCheck },
     { href: "/admin/blog", label: "Blog Posts", icon: FileText },
     { href: "/admin/classes", label: "Classes", icon: GraduationCap },
     { href: "/admin/deploy", label: "Deploy", icon: UploadCloud },

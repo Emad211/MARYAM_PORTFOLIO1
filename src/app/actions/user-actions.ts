@@ -39,7 +39,13 @@ export async function deleteContactMessage(id: string) {
     }
 }
 
-// --- Class Registrations Actions ---
+// --- Class Registrations Actions (DEPRECATED) ---
+//
+// The anonymous class-registration lead form was replaced by account-based
+// enrollment (see `enrollment-actions.ts`). No new rows are written here — the
+// public entry point is gone. `class_registrations` and these read/delete
+// accessors are retained for ONE release so any pre-migration leads remain
+// recoverable, then the table will be dropped. Do not wire new callers.
 
 export async function saveClassRegistration(data: Omit<ClassRegistration, 'id' | 'submittedAt'>) {
     try {

@@ -23,6 +23,9 @@ import type {
   ClassLevel,
   ClassStatus,
   ContactMessage,
+  Profile,
+  Enrollment,
+  EnrollmentStatus,
 } from './../types';
 
 // ---------------------------------------------------------------------------
@@ -97,6 +100,25 @@ export interface PageViewRow {
   ip: string;
   user_agent: string;
   referrer: string | null;
+}
+
+export interface ProfileRow {
+  id: string;
+  name: string;
+  phone: string;
+  german_level: string | null;
+  created_at: string;
+}
+
+export interface EnrollmentRow {
+  id: string;
+  user_id: string;
+  class_slug: string;
+  status: EnrollmentStatus;
+  learning_goal: string | null;
+  motivation: string | null;
+  submitted_at: string;
+  decided_at: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -287,5 +309,65 @@ export function pageViewToInsert(data: Omit<PageView, 'timestamp'>) {
     ip: data.ip,
     user_agent: data.userAgent,
     referrer: data.referrer,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Profiles
+// ---------------------------------------------------------------------------
+
+export function rowToProfile(row: ProfileRow): Profile {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    createdAt: row.created_at,
+    ...(row.german_level != null ? { germanLevel: row.german_level } : {}),
+  };
+}
+
+/** Upsert shape for a profile (`created_at` DB-generated; `id` is the auth uid). */
+export function profileToUpsert(
+  data: Pick<Profile, 'id' | 'name' | 'phone'> & { germanLevel?: string }
+) {
+  return {
+    id: data.id,
+    name: data.name,
+    phone: data.phone,
+    german_level: data.germanLevel ?? null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Enrollments
+// ---------------------------------------------------------------------------
+
+export function rowToEnrollment(row: EnrollmentRow): Enrollment {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    classSlug: row.class_slug,
+    status: row.status,
+    submittedAt: row.submitted_at,
+    ...(row.learning_goal != null ? { learningGoal: row.learning_goal } : {}),
+    ...(row.motivation != null ? { motivation: row.motivation } : {}),
+    ...(row.decided_at != null ? { decidedAt: row.decided_at } : {}),
+  };
+}
+
+/** Insert shape for a student enrollment. `status` is forced to 'pending' (RLS
+ *  enforces this too); id/submitted_at/decided_at are DB-generated. */
+export function enrollmentToInsert(data: {
+  userId: string;
+  classSlug: string;
+  learningGoal?: string;
+  motivation?: string;
+}) {
+  return {
+    user_id: data.userId,
+    class_slug: data.classSlug,
+    status: 'pending' as const,
+    learning_goal: data.learningGoal ?? null,
+    motivation: data.motivation ?? null,
   };
 }

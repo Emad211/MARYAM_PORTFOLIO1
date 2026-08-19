@@ -17,3 +17,19 @@ export async function isAdminRequest(): Promise<boolean> {
   if (error || !data.user) return false;
   return (data.user.app_metadata as { role?: string } | undefined)?.role === 'admin';
 }
+
+/**
+ * Returns the authenticated user's id only if their server-controlled role is
+ * `student`, else null. Same JWT-revalidating `getUser()` + `app_metadata`
+ * rules as `isAdminRequest`. Enrollment actions need the id (to scope the row
+ * to its owner), so this returns it rather than a bare boolean; RLS enforces
+ * owner-scoping again at the database.
+ */
+export async function studentUserId(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return null;
+  const role = (data.user.app_metadata as { role?: string } | undefined)?.role;
+  return role === 'student' ? data.user.id : null;
+}
+

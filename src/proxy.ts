@@ -3,8 +3,9 @@ import { updateSession } from '@/lib/supabase/middleware';
 
 /**
  * Refreshes the Supabase auth session on every matched request and enforces
- * admin-only access to `/admin` (see `updateSession`). Replaces the old
- * unsigned-cookie presence check.
+ * role-based access: `/admin` requires `admin`, `/dashboard` requires
+ * `student` (see `updateSession`). Replaces the old unsigned-cookie presence
+ * check.
  *
  * Next.js 16 renamed the `middleware` file convention to `proxy` (same
  * behaviour, now defaulting to the Node.js runtime — which suits the
@@ -16,7 +17,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on /admin (to gate it) and /login (so the session cookie is refreshed
-  // and a logged-in admin isn't left with a stale token on the login page).
-  matcher: ['/admin/:path*', '/login'],
+  // Gate the two protected areas (/admin, /dashboard) and refresh the session
+  // cookie on the auth pages (/login, /signup) so a logged-in user isn't left
+  // holding a stale token there.
+  matcher: ['/admin/:path*', '/dashboard/:path*', '/login', '/signup'],
 };

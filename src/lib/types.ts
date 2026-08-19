@@ -123,3 +123,35 @@ export interface PageView {
   userAgent: string;
   referrer: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Accounts & enrollment (Phase 1)
+// ---------------------------------------------------------------------------
+
+/** JWT `app_metadata.role` values. Server-controlled; never from user_metadata. */
+export type UserRole = 'admin' | 'student';
+
+/** Enrollment lifecycle: student enrolls (pending) → admin approves/rejects,
+ *  or the student cancels. A payment step can slot between pending and approved
+ *  later without changing these states. */
+export type EnrollmentStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+/** App-level profile for an auth user (email lives on the auth record). */
+export interface Profile {
+  id: string;
+  name: string;
+  phone: string;
+  germanLevel?: string;
+  createdAt: string;
+}
+
+export interface Enrollment {
+  id: string;
+  userId: string;
+  classSlug: string;
+  status: EnrollmentStatus;
+  learningGoal?: string;
+  motivation?: string;
+  submittedAt: string;
+  decidedAt?: string;
+}

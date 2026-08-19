@@ -2,8 +2,9 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Refreshes the Supabase auth session on every request and enforces admin-only
- * access to `/admin`. Called from `src/proxy.ts`.
+ * Refreshes the Supabase auth session on every request and enforces role-based
+ * access: `/admin` requires the `admin` role, `/dashboard` requires `student`.
+ * Called from `src/proxy.ts`.
  *
  * Follows the official @supabase/ssr pattern: the same cookies must be written
  * to BOTH the request (so downstream Server Components read the fresh token)
@@ -42,12 +43,16 @@ export async function updateSession(request: NextRequest) {
   // revalidate the token.
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
-  const isAdmin =
-    (claims?.app_metadata as { role?: string } | undefined)?.role === 'admin';
+  const role = (claims?.app_metadata as { role?: string } | undefined)?.role;
 
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith('/admin') && !isAdmin) {
+  // Gate each protected area on its required role. A wrong-role (or absent)
+  // session is bounced to /login with a redirect back to where it was headed.
+  const needsAdmin = pathname.startsWith('/admin') && role !== 'admin';
+  const needsStudent = pathname.startsWith('/dashboard') && role !== 'student';
+
+  if (needsAdmin || needsStudent) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
     loginUrl.searchParams.set('redirect', pathname);

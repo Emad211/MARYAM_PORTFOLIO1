@@ -1,19 +1,26 @@
 
-import { getClassRegistrations } from "@/app/actions/user-actions";
-import { RegistrationsDataTable } from "@/components/admin/registrations-data-table";
+import { getEnrollmentsForAdmin } from "@/app/actions/enrollment-actions";
+import { getClasses } from "@/lib/cms-store";
+import { EnrollmentsDataTable } from "@/components/admin/enrollments-data-table";
 
-
+// Admin enrollment management (Phase 1). Replaces the old anonymous
+// class-registration list: enrollments are account-based now, and the admin
+// approves/rejects each pending request here. The route stays /admin/registrations
+// so existing links and the e2e visual suite keep resolving.
 export default async function RegistrationsPage() {
-    const registrations = await getClassRegistrations();
+    const [enrollments, classes] = await Promise.all([
+        getEnrollmentsForAdmin(),
+        getClasses(),
+    ]);
 
     return (
         <div>
             <div className="mb-6">
-                <h1 className="text-3xl font-bold tracking-tight">Class Registrations</h1>
-                <p className="text-muted-foreground">Generate personalized welcome emails and manage all student registrations.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Enrollments</h1>
+                <p className="text-muted-foreground">Review and approve student enrollment requests for your classes.</p>
             </div>
 
-            <RegistrationsDataTable data={registrations} />
+            <EnrollmentsDataTable data={enrollments} classes={classes} />
         </div>
     );
 }

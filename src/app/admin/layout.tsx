@@ -28,17 +28,20 @@ function AdminArea({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
     const router = useRouter();
 
+    // Only an admin session may see the admin shell. The proxy already gates
+    // /admin on the server; this is the client-side fallback for a session that
+    // changes while the page is open (cookie cleared, or a student who somehow
+    // reaches this tree). A non-admin is sent to login.
+    const isAdmin = user?.role === 'admin';
+
     useEffect(() => {
-        // This effect only runs on the client after initial load.
-        // The middleware has already protected the route on the server.
-        // This handles the case where a cookie might be deleted while the user is on the page.
-        if (!loading && !user) {
+        if (!loading && !isAdmin) {
             router.push('/login');
         }
-    }, [user, loading, router]);
+    }, [isAdmin, loading, router]);
 
 
-    if (loading || !user) {
+    if (loading || !isAdmin) {
         return <AdminDashboardSkeleton />;
     }
 

@@ -7,7 +7,7 @@ export default defineConfig({
     timeout: 5000
   },
   fullyParallel: false,
-  reporter: [['list'], ['html', { outputFolder: 'playwright-report' }]],
+  reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   projects: [
     {
       name: 'chromium',
@@ -17,13 +17,15 @@ export default defineConfig({
   use: {
     headless: true,
     baseURL: 'http://localhost:9002'
-  }
+  },
+  // Start the dev server automatically when running Playwright tests.
+  // Must live inside defineConfig — a bare `export const webServer` is ignored
+  // by Playwright, which left the suite with no server to hit.
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:9002',
+    timeout: 120_000,
+    reuseExistingServer: true,
+  },
 });
 
-// Start the dev server automatically when running Playwright tests
-export const webServer = {
-  command: 'npm run dev',
-  url: 'http://localhost:9002',
-  timeout: 120_000,
-  reuseExistingServer: true,
-};

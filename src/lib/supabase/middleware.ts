@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 /**
  * Refreshes the Supabase auth session on every request and enforces admin-only
- * access to `/admin`. Called from `src/middleware.ts`.
+ * access to `/admin`. Called from `src/proxy.ts`.
  *
  * Follows the official @supabase/ssr pattern: the same cookies must be written
  * to BOTH the request (so downstream Server Components read the fresh token)

@@ -1,11 +1,10 @@
-import type { 
-    Post, 
-    Class, 
-    TimelineEvent, 
-    HomeContent, 
-    AboutContent, 
-    ContactContent, 
-    AdminUser,
+import type {
+    Post,
+    Class,
+    TimelineEvent,
+    HomeContent,
+    AboutContent,
+    ContactContent,
     ClassRegistration,
     PageView,
 } from './types';
@@ -17,7 +16,6 @@ interface CMSData {
     homeContent: HomeContent;
     aboutContent: AboutContent;
     contactContent: ContactContent;
-    adminUser: AdminUser;
     posts: Post[];
     classes: Class[];
     timeline: TimelineEvent[];
@@ -182,10 +180,6 @@ export function getEmptyCMSData(): CMSData {
                 fa: "برای سوالات در مورد دوره‌های زبان آلمانی، ثبت‌نام و روش‌های یادگیری با من تماس بگیرید. بیایید سفر زبانی شما را با هم آغاز کنیم."
               }
             }
-        },
-        adminUser: {
-            email: process.env.ADMIN_EMAIL || "admin@example.com",
-            password: process.env.ADMIN_PASSWORD || "password"
         },
         posts: [
             {

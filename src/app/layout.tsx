@@ -5,8 +5,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from '@/context/language-context';
 import { AuthProvider } from '@/context/auth-context';
-import { adminUser, contactContent } from '@/lib/data-loader';
-import { cookies } from 'next/headers';
+import { getContactContent } from '@/lib/cms-store';
 import { AccessibleErrorBoundary } from '@/components/ui/accessibility';
 import { PerformanceMonitor } from '@/components/performance-monitor';
 
@@ -36,9 +35,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get('auth-token');
-  const isAuthenticated = !!authToken;
+  // Footer needs contact details on every page. Fetch it here (public,
+  // RLS-readable) and pass it through the auth context, which is the existing
+  // provider the footer reads from. Auth *state* is owned client-side by the
+  // Supabase session — the server no longer derives or leaks it.
+  const contactContent = await getContactContent();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -56,11 +57,7 @@ export default async function RootLayout({
               enableSystem
               disableTransitionOnChange
           >
-            <AuthProvider 
-              initialAdminUser={adminUser} 
-              initialContactContent={contactContent}
-              isAuthenticated={isAuthenticated}
-            >
+            <AuthProvider initialContactContent={contactContent}>
                 <LanguageProvider>
                     <PerformanceMonitor />
                     {children}

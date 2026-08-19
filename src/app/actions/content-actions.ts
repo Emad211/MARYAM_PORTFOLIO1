@@ -11,10 +11,10 @@ import {
   saveHomeContent,
   saveAboutContent,
   saveContactContent,
-  getAdminUser,
-  saveAdminUser
 } from '@/lib/cms-store';
-import type { HomeContent, Post, Class, TimelineEvent, AboutContent, ContactContent, AdminUser, Language, PostCategory, ClassType, ClassLevel, ClassStatus } from '@/lib/types';
+import { createClient } from '@/lib/supabase/server';
+import { isAdminRequest } from '@/lib/supabase/auth-guard';
+import type { HomeContent, Post, Class, TimelineEvent, AboutContent, ContactContent, Language, PostCategory, ClassType, ClassLevel, ClassStatus } from '@/lib/types';
 
 // --- Utility Functions ---
 
@@ -23,16 +23,30 @@ function slugify(text: string): string {
     .toString()
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-') 
+    .replace(/\s+/g, '-')
     .replace(/[^\w-]+/g, '')
     .replace(/--+/g, '-');
 }
 
 const languages: Language[] = ['en', 'de', 'fa'];
 
+/**
+ * Shared authorization gate for every content-write action. Returns a failure
+ * result to hand straight back to the client when the caller isn't an admin,
+ * or null when the request is authorized. Defense-in-depth with RLS.
+ */
+async function requireAdmin(): Promise<{ success: false; message: string } | null> {
+    if (!(await isAdminRequest())) {
+        return { success: false, message: 'Unauthorized.' };
+    }
+    return null;
+}
+
 // --- Content Update Functions ---
 
 export async function updateHomeContent(newHomeContent: HomeContent) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
     try {
         await saveHomeContent(newHomeContent);
         revalidatePath('/');
@@ -45,6 +59,8 @@ export async function updateHomeContent(newHomeContent: HomeContent) {
 }
 
 export async function updateAboutContent(newAboutContent: AboutContent) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
     try {
         await saveAboutContent(newAboutContent);
         revalidatePath('/about');
@@ -57,6 +73,8 @@ export async function updateAboutContent(newAboutContent: AboutContent) {
 }
 
 export async function updateContactContent(newContactContent: ContactContent) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
     try {
         await saveContactContent(newContactContent);
         revalidatePath('/contact');
@@ -69,6 +87,8 @@ export async function updateContactContent(newContactContent: ContactContent) {
 }
 
 export async function updateTimeline(newTimeline: TimelineEvent[]) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
     try {
         await saveTimeline(newTimeline);
         revalidatePath('/about');
@@ -83,6 +103,9 @@ export async function updateTimeline(newTimeline: TimelineEvent[]) {
 // --- Post Management ---
 
 export async function createPost(prevState: unknown, formData: FormData) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
+
     const titleEn = formData.get('title-en') as string;
     if (!titleEn) {
         return { success: false, message: "title_required" };
@@ -146,6 +169,8 @@ export async function createPost(prevState: unknown, formData: FormData) {
 }
 
 export async function updatePost(updatedPost: Post) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
     try {
         const posts = await getPosts();
         const postIndex = posts.findIndex(p => p.slug === updatedPost.slug);
@@ -164,6 +189,8 @@ export async function updatePost(updatedPost: Post) {
 }
 
 export async function deletePost(slug: string) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
     try {
         const posts = await getPosts();
         const updatedPosts = posts.filter(p => p.slug !== slug);
@@ -181,6 +208,9 @@ export async function deletePost(slug: string) {
 // --- Class Management ---
 
 export async function createClass(prevState: unknown, formData: FormData) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
+
     const titleEn = formData.get('title-en') as string;
      if (!titleEn) {
         return { success: false, message: "title_required" };
@@ -269,6 +299,8 @@ export async function createClass(prevState: unknown, formData: FormData) {
 }
 
 export async function updateClass(updatedClass: Class) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
     try {
         const classes = await getClasses();
         const classIndex = classes.findIndex(c => c.slug === updatedClass.slug);
@@ -287,6 +319,8 @@ export async function updateClass(updatedClass: Class) {
 }
 
 export async function deleteClass(slug: string) {
+    const denied = await requireAdmin();
+    if (denied) return denied;
     try {
         const classes = await getClasses();
         const updatedClasses = classes.filter(c => c.slug !== slug);
@@ -312,24 +346,43 @@ export async function updateUserCredentials(formData: FormData) {
     if (!currentPassword || !newEmail) {
         return { success: false, message: 'Missing required fields.' };
     }
-    
-    const adminUser = await getAdminUser();
-
-    if (adminUser.password !== currentPassword) {
-        return { success: false, message: 'Incorrect current password.' };
-    }
 
     if (newPassword && newPassword !== confirmPassword) {
         return { success: false, message: 'New passwords do not match.' };
     }
-    
-    const updatedUser: AdminUser = {
-        email: newEmail,
-        password: newPassword || adminUser.password 
-    };
-    
+
+    const supabase = await createClient();
+
+    // Must be a logged-in admin to reach this action at all.
+    const { data: userData } = await supabase.auth.getUser();
+    const currentUser = userData.user;
+    if (!currentUser || (currentUser.app_metadata as { role?: string } | undefined)?.role !== 'admin') {
+        return { success: false, message: 'Unauthorized.' };
+    }
+
+    // Re-verify the current password. Supabase has no "check password" call, so
+    // we re-authenticate with the account's current email; a failure means the
+    // supplied current password is wrong.
+    const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: currentUser.email!,
+        password: currentPassword,
+    });
+    if (reauthError) {
+        return { success: false, message: 'Incorrect current password.' };
+    }
+
+    // Apply the changes. Only include a field when it actually changes.
+    const updates: { email?: string; password?: string } = {};
+    if (newEmail && newEmail !== currentUser.email) updates.email = newEmail;
+    if (newPassword) updates.password = newPassword;
+
+    if (Object.keys(updates).length === 0) {
+        return { success: true, message: 'Credentials updated successfully!' };
+    }
+
     try {
-        await saveAdminUser(updatedUser);
+        const { error } = await supabase.auth.updateUser(updates);
+        if (error) throw error;
         revalidatePath('/login');
         return { success: true, message: 'Credentials updated successfully!' };
     } catch (error) {

@@ -64,6 +64,15 @@ export interface ClassRegistration {
   motivation?: string;
 }
 
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  submittedAt: string;
+}
+
 export interface TimelineEvent {
   year: string;
   title: LocalizedString;
@@ -105,11 +114,6 @@ export interface ContactContent {
     linkedinUrl: string;
     telegramUrl: string;
     seo: SeoContent;
-}
-
-export interface AdminUser {
-    email: string;
-    password: string;
 }
 
 export interface PageView {

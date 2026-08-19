@@ -1,14 +1,9 @@
 
 'use server';
 
-import { getAnalytics, saveAnalytics } from '@/lib/cms-store';
+import { getAnalytics, insertPageView } from '@/lib/cms-store';
 import { headers } from 'next/headers';
 import { startOfDay, subDays } from 'date-fns';
-import type { PageView } from '@/lib/types';
-
-async function writeAnalyticsData(data: PageView[]): Promise<void> {
-  await saveAnalytics(data);
-}
 
 async function getReferrerType(referrer: string | null, headerStore: Readonly<Headers>): Promise<string> {
     if (!referrer) {
@@ -59,17 +54,15 @@ export async function trackPageView(pathname: string) {
   const userAgent = headerStore.get('user-agent') ?? 'unknown';
   const referrer = headerStore.get('referer');
 
-  const newPageView: PageView = {
+  // Single-row insert — the DB fills `viewed_at`. This replaces the previous
+  // read-entire-log / push / rewrite-entire-log pattern, which was O(n) per
+  // view and lost data under concurrent writes.
+  await insertPageView({
     path: pathname,
-    timestamp: new Date().toISOString(),
     ip,
     userAgent,
     referrer,
-  };
-
-  const allViews = await getAnalytics();
-  allViews.push(newPageView);
-  await writeAnalyticsData(allViews);
+  });
 }
 
 export async function getAnalyticsData() {

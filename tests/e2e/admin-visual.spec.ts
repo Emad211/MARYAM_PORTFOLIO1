@@ -52,7 +52,8 @@ test.describe('Admin visual & accessibility checks', () => {
         // go to target page
         await page.goto(p);
         // Wait for an admin-specific element to ensure page loaded
-        await page.waitForSelector('[data-testid="admin-dashboard"] , [data-testid="dashboard-content"] , main, h1', { timeout: 10000 });
+        // 30s: registrations stitches emails over remote DB + cold Turbopack compiles
+        await page.waitForSelector('[data-testid="admin-dashboard"] , [data-testid="dashboard-content"] , main, h1', { timeout: 30000 });
 
         // small pause for fonts/animations
         await page.waitForTimeout(300);

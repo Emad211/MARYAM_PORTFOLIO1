@@ -51,6 +51,9 @@ const newClassContent = {
     success: "Class created successfully!",
     error: "Failed to create class.",
     errorTitleRequired: "English title is required to generate a slug.",
+    errorTranslationsRequired: "At least one language must have its title, excerpt and description fully filled.",
+    multilingualContent: "Multilingual Content",
+    seoMetadata: "SEO Metadata",
   },
   de: {
     pageTitle: "Neuen Kurs erstellen",
@@ -83,6 +86,9 @@ const newClassContent = {
     success: "Kurs erfolgreich erstellt!",
     error: "Klasse konnte nicht erstellt werden.",
     errorTitleRequired: "Ein englischer Titel ist erforderlich, um einen Slug zu generieren.",
+    errorTranslationsRequired: "Mindestens eine Sprache muss Titel, Kurzfassung und Beschreibung vollständig ausgefüllt haben.",
+    multilingualContent: "Mehrsprachiger Inhalt",
+    seoMetadata: "SEO-Metadaten",
   },
   fa: {
     pageTitle: "ایجاد کلاس جدید",
@@ -115,6 +121,9 @@ const newClassContent = {
     success: "کلاس با موفقیت ایجاد شد!",
     error: "ایجاد کلاس ناموفق بود.",
     errorTitleRequired: "برای ساختن آدرس صفحه، عنوان انگلیسی الزامی است.",
+    errorTranslationsRequired: "حداقل یک زبان باید عنوان، خلاصه و توضیحات کامل داشته باشد.",
+    multilingualContent: "محتوای چندزبانه",
+    seoMetadata: "فراداده سئو",
   },
 };
 
@@ -151,9 +160,11 @@ export default function NewClassPage() {
         router.push('/admin/classes');
       }
     } else if (state.message) {
-      const description = state.message === 'title_required' 
-        ? content.errorTitleRequired 
-        : state.message;
+      const description = state.message === 'title_required'
+        ? content.errorTitleRequired
+        : state.message === 'translations_required'
+          ? content.errorTranslationsRequired
+          : state.message;
         
       toast({
         variant: "destructive",
@@ -246,7 +257,7 @@ export default function NewClassPage() {
             <TabsContent value="content">
               <Card>
                 <CardHeader>
-                  <CardTitle>Multilingual Content</CardTitle>
+                  <CardTitle>{content.multilingualContent}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="en">
@@ -290,7 +301,7 @@ export default function NewClassPage() {
             <TabsContent value="seo">
               <Card>
                 <CardHeader>
-                  <CardTitle>SEO Metadata</CardTitle>
+                  <CardTitle>{content.seoMetadata}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="en">

@@ -143,7 +143,7 @@ export function AdminBlogPageContent({ posts }: { posts: Post[] }) {
               />
             </div>
             <Select value={activeCategory} onValueChange={(value) => setActiveCategory(value as PostCategory | 'all')}>
-              <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter by category">
+              <SelectTrigger className="w-full sm:w-[180px]" aria-label={content.allCategories}>
                 <SelectValue placeholder={content.allCategories} />
               </SelectTrigger>
               <SelectContent>

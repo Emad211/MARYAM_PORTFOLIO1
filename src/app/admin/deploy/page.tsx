@@ -120,7 +120,8 @@ const pageContent = {
 
 function CodeBlock({ command }: { command: string }) {
   const { toast } = useToast();
-  const content = pageContent.en;
+  const { language } = useLanguage();
+  const content = pageContent[language] || pageContent.en;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(command.trim());

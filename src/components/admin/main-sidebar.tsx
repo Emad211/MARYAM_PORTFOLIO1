@@ -5,18 +5,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarFooter } from "@/components/ui/sidebar";
 import { LayoutDashboard, FileText, GraduationCap, Settings, UploadCloud, MessageSquare, UserCheck } from "lucide-react";
+import { useLanguage } from "@/context/language-context";
+import type { Language } from "@/lib/types";
+
+const sidebarLabels: Record<Language, { dashboard: string; messages: string; enrollments: string; blog: string; classes: string; deploy: string; settings: string }> = {
+  en: { dashboard: "Dashboard", messages: "Messages", enrollments: "Enrollments", blog: "Blog Posts", classes: "Classes", deploy: "Deploy", settings: "Settings" },
+  de: { dashboard: "Dashboard", messages: "Nachrichten", enrollments: "Anmeldungen", blog: "Blogbeiträge", classes: "Kurse", deploy: "Deployment", settings: "Einstellungen" },
+  fa: { dashboard: "داشبورد", messages: "پیام‌ها", enrollments: "ثبت‌نام‌ها", blog: "پست‌های وبلاگ", classes: "کلاس‌ها", deploy: "استقرار", settings: "تنظیمات" },
+};
 
 export function MainSidebar() {
   const pathname = usePathname();
+  const { language } = useLanguage();
+  const t = sidebarLabels[language];
 
   const menuItems = [
-    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/messages", label: "Messages", icon: MessageSquare },
-    { href: "/admin/registrations", label: "Enrollments", icon: UserCheck },
-    { href: "/admin/blog", label: "Blog Posts", icon: FileText },
-    { href: "/admin/classes", label: "Classes", icon: GraduationCap },
-    { href: "/admin/deploy", label: "Deploy", icon: UploadCloud },
-    { href: "/admin/settings", label: "Settings", icon: Settings },
+    { href: "/admin", label: t.dashboard, icon: LayoutDashboard },
+    { href: "/admin/messages", label: t.messages, icon: MessageSquare },
+    { href: "/admin/registrations", label: t.enrollments, icon: UserCheck },
+    { href: "/admin/blog", label: t.blog, icon: FileText },
+    { href: "/admin/classes", label: t.classes, icon: GraduationCap },
+    { href: "/admin/deploy", label: t.deploy, icon: UploadCloud },
+    { href: "/admin/settings", label: t.settings, icon: Settings },
   ];
   
   return (

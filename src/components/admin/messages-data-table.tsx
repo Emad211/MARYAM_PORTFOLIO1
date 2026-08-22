@@ -26,8 +26,65 @@ import type { getContactMessages } from "@/app/actions/user-actions";
 import { DeleteConfirmationDialog } from "@/components/admin/delete-confirmation-dialog";
 import { deleteContactMessage } from "@/app/actions/user-actions";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/context/language-context";
+import { getValidLocale } from "@/lib/type-utils";
+import type { Language } from "@/lib/types";
 
 type Message = Awaited<ReturnType<typeof getContactMessages>>[0];
+
+const messagesTableContent: Record<Language, {
+  pageTitle: string;
+  pageDescription: string;
+  sender: string;
+  subjectMessage: string;
+  date: string;
+  actions: string;
+  deleteMessage: string;
+  noMessages: string;
+  from: string;
+  deleted: string;
+  error: string;
+}> = {
+  en: {
+    pageTitle: "Contact Messages",
+    pageDescription: "Here you can view and delete messages submitted through the contact form.",
+    sender: "Sender",
+    subjectMessage: "Subject & Message",
+    date: "Date",
+    actions: "Actions",
+    deleteMessage: "Delete Message",
+    noMessages: "No messages received yet.",
+    from: "From",
+    deleted: "Message deleted",
+    error: "Error",
+  },
+  de: {
+    pageTitle: "Kontaktnachrichten",
+    pageDescription: "Hier können Sie über das Kontaktformular eingegangene Nachrichten ansehen und löschen.",
+    sender: "Absender",
+    subjectMessage: "Betreff & Nachricht",
+    date: "Datum",
+    actions: "Aktionen",
+    deleteMessage: "Nachricht löschen",
+    noMessages: "Noch keine Nachrichten eingegangen.",
+    from: "Von",
+    deleted: "Nachricht gelöscht",
+    error: "Fehler",
+  },
+  fa: {
+    pageTitle: "پیام‌های تماس",
+    pageDescription: "در اینجا می‌توانید پیام‌های ارسال‌شده از طریق فرم تماس را مشاهده و حذف کنید.",
+    sender: "فرستنده",
+    subjectMessage: "موضوع و پیام",
+    date: "تاریخ",
+    actions: "عملیات",
+    deleteMessage: "حذف پیام",
+    noMessages: "هنوز پیامی دریافت نشده است.",
+    from: "از",
+    deleted: "پیام حذف شد",
+    error: "خطا",
+  },
+};
 
 interface MessagesDataTableProps {
   data: Message[];
@@ -37,15 +94,17 @@ export function MessagesDataTable({ data }: MessagesDataTableProps) {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = messagesTableContent[language];
 
   const handleDelete = async (id: string) => {
     const result = await deleteContactMessage(id);
     if (result.success) {
-      toast({ title: "Message deleted" });
+      toast({ title: t.deleted });
       router.refresh();
     } else {
       toast({
-        title: "Error",
+        title: t.error,
         description: result.message,
         variant: "destructive",
       });
@@ -54,15 +113,19 @@ export function MessagesDataTable({ data }: MessagesDataTableProps) {
 
   return (
     <>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">{t.pageTitle}</h1>
+        <p className="text-muted-foreground">{t.pageDescription}</p>
+      </div>
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px]">Sender</TableHead>
-                <TableHead>Subject & Message</TableHead>
-                <TableHead className="w-[180px]">Date</TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
+                <TableHead className="w-[200px]">{t.sender}</TableHead>
+                <TableHead>{t.subjectMessage}</TableHead>
+                <TableHead className="w-[180px]">{t.date}</TableHead>
+                <TableHead className="w-[100px] text-right">{t.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -86,13 +149,13 @@ export function MessagesDataTable({ data }: MessagesDataTableProps) {
                     onClick={() => setSelectedMessage(message)}
                     className="cursor-pointer text-xs text-muted-foreground"
                   >
-                    {format(new Date(message.submittedAt), "PPP p")}
+                    {format(new Date(message.submittedAt), "PPP p", { locale: getValidLocale(language) })}
                   </TableCell>
                   <TableCell className="text-right">
                     <DeleteConfirmationDialog onConfirm={() => handleDelete(message.id)}>
                       <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete Message</span>
+                        <span className="sr-only">{t.deleteMessage}</span>
                       </Button>
                     </DeleteConfirmationDialog>
                   </TableCell>
@@ -101,7 +164,7 @@ export function MessagesDataTable({ data }: MessagesDataTableProps) {
               {data.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
-                    No messages received yet.
+                    {t.noMessages}
                   </TableCell>
                 </TableRow>
               )}
@@ -115,7 +178,7 @@ export function MessagesDataTable({ data }: MessagesDataTableProps) {
           <DialogHeader>
             <DialogTitle>{selectedMessage?.subject}</DialogTitle>
             <DialogDescription>
-              From: {selectedMessage?.name} ({selectedMessage?.email})
+              {t.from}: {selectedMessage?.name} ({selectedMessage?.email})
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 whitespace-pre-wrap text-sm">

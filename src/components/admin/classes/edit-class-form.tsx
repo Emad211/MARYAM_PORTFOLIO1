@@ -50,6 +50,9 @@ const editClassContent = {
     saving: "Saving...",
     success: "Class updated successfully!",
     error: "Failed to update class.",
+    errorTranslationsRequired: "At least one language must have its title, excerpt and description fully filled.",
+    multilingualContent: "Multilingual Content",
+    seoMetadata: "SEO Metadata",
   },
   de: {
     pageTitle: "Kurs bearbeiten",
@@ -81,6 +84,9 @@ const editClassContent = {
     saving: "Speichern...",
     success: "Kurs erfolgreich aktualisiert!",
     error: "Klasse konnte nicht aktualisiert werden.",
+    errorTranslationsRequired: "Mindestens eine Sprache muss Titel, Kurzfassung und Beschreibung vollständig ausgefüllt haben.",
+    multilingualContent: "Mehrsprachiger Inhalt",
+    seoMetadata: "SEO-Metadaten",
   },
   fa: {
     pageTitle: "ویرایش کلاس",
@@ -112,6 +118,9 @@ const editClassContent = {
     saving: "در حال ذخیره...",
     success: "کلاس با موفقیت به‌روزرسانی شد!",
     error: "به روز رسانی کلاس انجام نشد.",
+    errorTranslationsRequired: "حداقل یک زبان باید عنوان، خلاصه و توضیحات کامل داشته باشد.",
+    multilingualContent: "محتوای چندزبانه",
+    seoMetadata: "فراداده سئو",
   },
 };
 
@@ -250,7 +259,9 @@ export function EditClassForm({ classes, slug }: { classes: Class[], slug: strin
       toast({
         variant: "destructive",
         title: content.error,
-        description: result.message,
+        description: result.message === 'translations_required'
+          ? content.errorTranslationsRequired
+          : result.message,
       });
     }
   };
@@ -343,7 +354,7 @@ export function EditClassForm({ classes, slug }: { classes: Class[], slug: strin
             <TabsContent value="content">
               <Card>
                 <CardHeader>
-                  <CardTitle>Multilingual Content</CardTitle>
+                  <CardTitle>{content.multilingualContent}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="en">
@@ -387,7 +398,7 @@ export function EditClassForm({ classes, slug }: { classes: Class[], slug: strin
             <TabsContent value="seo">
               <Card>
                 <CardHeader>
-                  <CardTitle>SEO Metadata</CardTitle>
+                  <CardTitle>{content.seoMetadata}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="en">

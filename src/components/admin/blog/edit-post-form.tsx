@@ -44,6 +44,9 @@ const editPostContent = {
     saving: "Saving...",
     success: "Post updated successfully!",
     error: "Failed to update post.",
+    errorTranslationsRequired: "At least one language must have its title, excerpt and body text fully filled.",
+    multilingualContent: "Multilingual Content",
+    seoMetadata: "SEO Metadata",
   },
   de: {
     pageTitle: "Beitrag bearbeiten",
@@ -69,6 +72,9 @@ const editPostContent = {
     saving: "Speichern...",
     success: "Beitrag erfolgreich aktualisiert!",
     error: "Beitrag konnte nicht aktualisiert werden.",
+    errorTranslationsRequired: "Mindestens eine Sprache muss Titel, Kurzfassung und Text vollständig ausgefüllt haben.",
+    multilingualContent: "Mehrsprachiger Inhalt",
+    seoMetadata: "SEO-Metadaten",
   },
   fa: {
     pageTitle: "ویرایش پست",
@@ -94,6 +100,9 @@ const editPostContent = {
     saving: "در حال ذخیره...",
     success: "پست با موفقیت به‌روزرسانی شد!",
     error: "به‌روزرسانی پست ناموفق بود.",
+    errorTranslationsRequired: "حداقل یک زبان باید عنوان، خلاصه و متن کامل داشته باشد.",
+    multilingualContent: "محتوای چندزبانه",
+    seoMetadata: "فراداده سئو",
   },
 };
 
@@ -202,7 +211,9 @@ export function EditPostForm({ posts, slug }: { posts: Post[], slug: string }) {
       toast({
         variant: "destructive",
         title: content.error,
-        description: result.message,
+        description: result.message === 'translations_required'
+          ? content.errorTranslationsRequired
+          : result.message,
       });
     }
   };
@@ -266,7 +277,7 @@ export function EditPostForm({ posts, slug }: { posts: Post[], slug: string }) {
             <TabsContent value="content">
               <Card>
                 <CardHeader>
-                  <CardTitle>Multilingual Content</CardTitle>
+                  <CardTitle>{content.multilingualContent}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="en">
@@ -302,7 +313,7 @@ export function EditPostForm({ posts, slug }: { posts: Post[], slug: string }) {
              <TabsContent value="seo">
               <Card>
                 <CardHeader>
-                  <CardTitle>SEO Metadata</CardTitle>
+                  <CardTitle>{content.seoMetadata}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="en">

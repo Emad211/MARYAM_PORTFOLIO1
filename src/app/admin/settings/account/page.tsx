@@ -140,13 +140,14 @@ export default function AccountSettingsPage() {
                 id="newEmail" 
                 name="newEmail"
                 type="email" 
+                autoComplete="email"
                 defaultValue={user?.email}
                 required 
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="currentPassword">{content.currentPasswordLabel}</Label>
-              <Input id="currentPassword" name="currentPassword" type="password" required />
+              <Input id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required />
             </div>
              <div className="space-y-2">
               <Label htmlFor="newPassword">{content.newPasswordLabel}</Label>
@@ -154,6 +155,7 @@ export default function AccountSettingsPage() {
                 id="newPassword" 
                 name="newPassword" 
                 type="password" 
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
@@ -164,6 +166,7 @@ export default function AccountSettingsPage() {
                 id="confirmPassword" 
                 name="confirmPassword" 
                 type="password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />

@@ -45,6 +45,9 @@ const newPostContent = {
     success: "Post created successfully!",
     error: "Failed to create post.",
     errorTitleRequired: "English title is required to generate a slug.",
+    errorTranslationsRequired: "At least one language must have its title, excerpt and body text fully filled.",
+    multilingualContent: "Multilingual Content",
+    seoMetadata: "SEO Metadata",
   },
   de: {
     pageTitle: "Neuen Beitrag erstellen",
@@ -71,6 +74,9 @@ const newPostContent = {
     success: "Beitrag erfolgreich erstellt!",
     error: "Beitrag konnte nicht erstellt werden.",
     errorTitleRequired: "Ein englischer Titel ist erforderlich, um einen Slug zu generieren.",
+    errorTranslationsRequired: "Mindestens eine Sprache muss Titel, Kurzfassung und Text vollständig ausgefüllt haben.",
+    multilingualContent: "Mehrsprachiger Inhalt",
+    seoMetadata: "SEO-Metadaten",
   },
   fa: {
     pageTitle: "ایجاد پست جدید",
@@ -97,6 +103,9 @@ const newPostContent = {
     success: "پست با موفقیت ایجاد شد!",
     error: "ایجاد پست ناموفق بود.",
     errorTitleRequired: "برای ساختن آدرس صفحه، عنوان انگلیسی الزامی است.",
+    errorTranslationsRequired: "حداقل یک زبان باید عنوان، خلاصه و متن کامل داشته باشد.",
+    multilingualContent: "محتوای چندزبانه",
+    seoMetadata: "فراداده سئو",
   },
 };
 
@@ -131,9 +140,11 @@ export default function NewPostPage() {
         router.push('/admin/blog');
       }
     } else if (state.message) {
-      const description = state.message === 'title_required' 
-        ? content.errorTitleRequired 
-        : state.message;
+      const description = state.message === 'title_required'
+        ? content.errorTitleRequired
+        : state.message === 'translations_required'
+          ? content.errorTranslationsRequired
+          : state.message;
         
       toast({
         variant: "destructive",
@@ -166,7 +177,7 @@ export default function NewPostPage() {
             <CardContent className="space-y-4">
                <div className="space-y-2">
                 <Label htmlFor="author">{content.author}</Label>
-                <Input id="author" name="author" defaultValue="LinguaSage" />
+                <Input id="author" name="author" defaultValue="Fluentia" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">{content.category}</Label>
@@ -198,7 +209,7 @@ export default function NewPostPage() {
             <TabsContent value="content">
               <Card>
                 <CardHeader>
-                  <CardTitle>Multilingual Content</CardTitle>
+                  <CardTitle>{content.multilingualContent}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="en">
@@ -235,7 +246,7 @@ export default function NewPostPage() {
             <TabsContent value="seo">
               <Card>
                 <CardHeader>
-                  <CardTitle>SEO Metadata</CardTitle>
+                  <CardTitle>{content.seoMetadata}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="en">

@@ -17,8 +17,84 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis, Bar as BarPrimitive } fro
 import { BarChart as BarChartComponent } from "recharts";
 import { ChartConfig } from "@/components/ui/chart"
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/context/language-context";
+import type { Language } from "@/lib/types";
 
 type AnalyticsData = Awaited<ReturnType<typeof getAnalyticsData>>;
+
+const dashboardContent: Record<Language, {
+  pageTitle: string;
+  totalViews: string;
+  totalViewsHint: string;
+  uniqueVisitors: string;
+  uniqueVisitorsHint: string;
+  viewsToday: string;
+  fromYesterday: string;
+  last7Days: string;
+  last7DaysHint: string;
+  topPages: string;
+  topPagesHint: string;
+  pagePath: string;
+  views: string;
+  noPageViews: string;
+  trafficSources: string;
+  trafficSourcesHint: string;
+}> = {
+  en: {
+    pageTitle: "Analytics Dashboard",
+    totalViews: "Total Views",
+    totalViewsHint: "All-time website visits",
+    uniqueVisitors: "All-time Unique Visitors",
+    uniqueVisitorsHint: "Based on unique IP addresses",
+    viewsToday: "Views Today",
+    fromYesterday: "from yesterday",
+    last7Days: "Views in Last 7 Days",
+    last7DaysHint: "A line chart showing page views over the past week.",
+    topPages: "Top Pages",
+    topPagesHint: "The most visited pages on your website.",
+    pagePath: "Page Path",
+    views: "Views",
+    noPageViews: "No page views tracked yet.",
+    trafficSources: "Traffic Sources",
+    trafficSourcesHint: "Where your visitors are coming from.",
+  },
+  de: {
+    pageTitle: "Analyse-Dashboard",
+    totalViews: "Aufrufe insgesamt",
+    totalViewsHint: "Besuche seit Bestehen der Website",
+    uniqueVisitors: "Eindeutige Besucher insgesamt",
+    uniqueVisitorsHint: "Basierend auf eindeutigen IP-Adressen",
+    viewsToday: "Aufrufe heute",
+    fromYesterday: "im Vergleich zu gestern",
+    last7Days: "Aufrufe der letzten 7 Tage",
+    last7DaysHint: "Ein Liniendiagramm der Seitenaufrufe der letzten Woche.",
+    topPages: "Top-Seiten",
+    topPagesHint: "Die meistbesuchten Seiten Ihrer Website.",
+    pagePath: "Pfad",
+    views: "Aufrufe",
+    noPageViews: "Noch keine Seitenaufrufe erfasst.",
+    trafficSources: "Traffic-Quellen",
+    trafficSourcesHint: "Woher Ihre Besucher kommen.",
+  },
+  fa: {
+    pageTitle: "داشبورد آمار",
+    totalViews: "مجموع بازدیدها",
+    totalViewsHint: "بازدید کل از ابتدا تاکنون",
+    uniqueVisitors: "بازدیدکنندگان یکتا",
+    uniqueVisitorsHint: "بر اساس آدرس‌های IP یکتا",
+    viewsToday: "بازدیدهای امروز",
+    fromYesterday: "نسبت به دیروز",
+    last7Days: "بازدیدهای ۷ روز گذشته",
+    last7DaysHint: "نمودار خطی بازدید صفحات در هفته گذشته.",
+    topPages: "صفحات پر بازدید",
+    topPagesHint: "پر بازدیدترین صفحات وبسایت شما.",
+    pagePath: "مسیر صفحه",
+    views: "بازدید",
+    noPageViews: "هنوز بازدیدی ثبت نشده است.",
+    trafficSources: "منابع ترافیک",
+    trafficSourcesHint: "بازدیدکنندگان از کجا می‌آیند.",
+  },
+};
 
 const lineChartConfig = {
   views: {
@@ -36,48 +112,49 @@ const barChartConfig = {
 
 export function AnalyticsDashboard({ initialData }: { initialData: AnalyticsData }) {
     const [isClient, setIsClient] = useState(false);
+    const { language } = useLanguage();
+    const t = dashboardContent[language];
     useEffect(() => {
         setIsClient(true);
     }, []);
 
   return (
     <div>
-      <h1 className="text-3xl font-bold tracking-tight mb-6">Analytics Dashboard</h1>
+      <h1 className="text-3xl font-bold tracking-tight mb-6">{t.pageTitle}</h1>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.totalViews}</CardTitle>
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{initialData.totalViews.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">All-time website visits</p>
+            <p className="text-xs text-muted-foreground">{t.totalViewsHint}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">All-time Unique Visitors</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.uniqueVisitors}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{initialData.totalUniqueVisitors.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Based on unique IP addresses</p>
+            <p className="text-xs text-muted-foreground">{t.uniqueVisitorsHint}</p>
           </CardContent>
         </Card>
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Views Today</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.viewsToday}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{initialData.viewsToday.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
                 <span className={initialData.dailyChangePercent >= 0 ? 'text-green-700' : 'text-red-500'}>
-                    {initialData.dailyChangePercent >= 0 ? '+' : ''}
-                    {initialData.dailyChangePercent.toFixed(1)}%
+                    {`${initialData.dailyChangePercent >= 0 ? '+' : ''}${initialData.dailyChangePercent.toFixed(1)}%`}
                 </span>
-                &nbsp;from yesterday
+                &nbsp;{t.fromYesterday}
             </p>
           </CardContent>
         </Card>
@@ -86,8 +163,8 @@ export function AnalyticsDashboard({ initialData }: { initialData: AnalyticsData
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-8">
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Views in Last 7 Days</CardTitle>
-             <CardDescription>A line chart showing page views over the past week.</CardDescription>
+            <CardTitle>{t.last7Days}</CardTitle>
+             <CardDescription>{t.last7DaysHint}</CardDescription>
           </CardHeader>
           <CardContent>
              {isClient && (
@@ -131,15 +208,15 @@ export function AnalyticsDashboard({ initialData }: { initialData: AnalyticsData
         </Card>
         <Card className="lg:col-span-2">
            <CardHeader>
-            <CardTitle>Top Pages</CardTitle>
-            <CardDescription>The most visited pages on your website.</CardDescription>
+            <CardTitle>{t.topPages}</CardTitle>
+            <CardDescription>{t.topPagesHint}</CardDescription>
           </CardHeader>
           <CardContent>
              <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Page Path</TableHead>
-                    <TableHead className="text-right">Views</TableHead>
+                    <TableHead>{t.pagePath}</TableHead>
+                    <TableHead className="text-right">{t.views}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -152,7 +229,7 @@ export function AnalyticsDashboard({ initialData }: { initialData: AnalyticsData
                    {initialData.topPages.length === 0 && (
                      <TableRow>
                         <TableCell colSpan={2} className="text-center text-muted-foreground h-24">
-                            No page views tracked yet.
+                            {t.noPageViews}
                         </TableCell>
                      </TableRow>
                    )}
@@ -165,8 +242,8 @@ export function AnalyticsDashboard({ initialData }: { initialData: AnalyticsData
        <div className="grid grid-cols-1 gap-6 mt-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Traffic Sources</CardTitle>
-                    <CardDescription>Where your visitors are coming from.</CardDescription>
+                    <CardTitle>{t.trafficSources}</CardTitle>
+                    <CardDescription>{t.trafficSourcesHint}</CardDescription>
                 </CardHeader>
                 <CardContent>
                      {isClient && (

@@ -15,6 +15,7 @@ import {
 import { createClient } from '@/lib/supabase/server';
 import { isAdminRequest } from '@/lib/supabase/auth-guard';
 import type { HomeContent, Post, Class, TimelineEvent, AboutContent, ContactContent, Language, PostCategory, ClassType, ClassLevel, ClassStatus } from '@/lib/types';
+import { hasCompleteLanguage } from '@/lib/translation-validation';
 
 // --- Utility Functions ---
 
@@ -149,6 +150,11 @@ export async function createPost(prevState: unknown, formData: FormData) {
         postData.seo.description[lang] = formData.get(`seo-desc-${lang}`) as string;
     });
 
+    // Blank languages render as empty cards on the public site; require >=1 complete.
+    if (!hasCompleteLanguage(postData.title, postData.excerpt, postData.content)) {
+        return { success: false, message: 'translations_required' };
+    }
+
     try {
         const posts = await getPosts();
         const slug = slugify(titleEn);
@@ -171,6 +177,9 @@ export async function createPost(prevState: unknown, formData: FormData) {
 export async function updatePost(updatedPost: Post) {
     const denied = await requireAdmin();
     if (denied) return denied;
+    if (!hasCompleteLanguage(updatedPost.title, updatedPost.excerpt, updatedPost.content)) {
+        return { success: false, message: 'translations_required' };
+    }
     try {
         const posts = await getPosts();
         const postIndex = posts.findIndex(p => p.slug === updatedPost.slug);
@@ -279,6 +288,11 @@ export async function createClass(prevState: unknown, formData: FormData) {
         });
     }
 
+    // Blank languages render as empty cards on the public site; require >=1 complete.
+    if (!hasCompleteLanguage(classData.title!, classData.excerpt!, classData.description!)) {
+        return { success: false, message: 'translations_required' };
+    }
+
     try {
         const classes = await getClasses();
         const slug = slugify(titleEn);
@@ -301,6 +315,9 @@ export async function createClass(prevState: unknown, formData: FormData) {
 export async function updateClass(updatedClass: Class) {
     const denied = await requireAdmin();
     if (denied) return denied;
+    if (!hasCompleteLanguage(updatedClass.title, updatedClass.excerpt, updatedClass.description)) {
+        return { success: false, message: 'translations_required' };
+    }
     try {
         const classes = await getClasses();
         const classIndex = classes.findIndex(c => c.slug === updatedClass.slug);

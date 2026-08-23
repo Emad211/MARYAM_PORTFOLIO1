@@ -142,6 +142,7 @@ export interface Profile {
   name: string;
   phone: string;
   germanLevel?: string;
+  avatarUrl?: string;
   createdAt: string;
 }
 

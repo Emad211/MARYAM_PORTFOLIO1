@@ -107,6 +107,7 @@ export interface ProfileRow {
   name: string;
   phone: string;
   german_level: string | null;
+  avatar_url: string | null;
   created_at: string;
 }
 
@@ -323,18 +324,25 @@ export function rowToProfile(row: ProfileRow): Profile {
     phone: row.phone,
     createdAt: row.created_at,
     ...(row.german_level != null ? { germanLevel: row.german_level } : {}),
+    ...(row.avatar_url ? { avatarUrl: row.avatar_url } : {}),
   };
 }
 
-/** Upsert shape for a profile (`created_at` DB-generated; `id` is the auth uid). */
+/** Upsert shape for a profile (`created_at` DB-generated; `id` is the auth uid).
+ *  `avatarUrl` is conditional so callers that omit it never clobber the stored
+ *  value; `germanLevel` always writes (null clears it). */
 export function profileToUpsert(
-  data: Pick<Profile, 'id' | 'name' | 'phone'> & { germanLevel?: string }
+  data: Pick<Profile, 'id' | 'name' | 'phone'> & {
+    germanLevel?: string;
+    avatarUrl?: string;
+  }
 ) {
   return {
     id: data.id,
     name: data.name,
     phone: data.phone,
     german_level: data.germanLevel ?? null,
+    ...(data.avatarUrl !== undefined ? { avatar_url: data.avatarUrl } : {}),
   };
 }
 

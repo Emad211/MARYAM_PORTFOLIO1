@@ -1,18 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useLanguage } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LogOut, ArrowLeft } from 'lucide-react';
+import { LogOut, ArrowLeft, LayoutDashboard, UserRound } from 'lucide-react';
 
 const shellContent = {
     en: { site: 'Back to Site', logout: 'Log Out', greeting: 'My Account' },
     de: { site: 'Zur Seite', logout: 'Abmelden', greeting: 'Mein Konto' },
     fa: { site: 'بازگشت به سایت', logout: 'خروج', greeting: 'حساب من' },
+} as const;
+
+const navContent = {
+    en: { dashboard: 'Dashboard', profile: 'Profile' },
+    de: { dashboard: 'Übersicht', profile: 'Profil' },
+    fa: { dashboard: 'داشبورد', profile: 'پروفایل' },
 } as const;
 
 function DashboardSkeleton() {
@@ -33,8 +39,10 @@ function DashboardSkeleton() {
 function StudentArea({ children }: { children: React.ReactNode }) {
     const { user, loading, logout } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const { language } = useLanguage();
     const content = shellContent[language];
+    const nav = navContent[language];
 
     // Only a student session may see the dashboard. The proxy already gates
     // /dashboard on the server; this is the client-side fallback for a session
@@ -82,6 +90,28 @@ function StudentArea({ children }: { children: React.ReactNode }) {
                         </Button>
                     </div>
                 </div>
+                <nav aria-label={content.greeting} className="mx-auto flex max-w-4xl gap-2 px-4 pb-3">
+                    <Button
+                        variant={pathname === '/dashboard' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        asChild
+                    >
+                        <Link href="/dashboard" className="flex items-center gap-2">
+                            <LayoutDashboard className="h-4 w-4" />
+                            {nav.dashboard}
+                        </Link>
+                    </Button>
+                    <Button
+                        variant={pathname.startsWith('/dashboard/profile') ? 'secondary' : 'ghost'}
+                        size="sm"
+                        asChild
+                    >
+                        <Link href="/dashboard/profile" className="flex items-center gap-2">
+                            <UserRound className="h-4 w-4" />
+                            {nav.profile}
+                        </Link>
+                    </Button>
+                </nav>
             </header>
             <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>
         </div>

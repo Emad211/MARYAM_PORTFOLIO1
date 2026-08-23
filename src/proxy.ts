@@ -18,7 +18,17 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Gate the two protected areas (/admin, /dashboard) and refresh the session
-  // cookie on the auth pages (/login, /signup) so a logged-in user isn't left
-  // holding a stale token there.
-  matcher: ['/admin/:path*', '/dashboard/:path*', '/login', '/signup'],
+  // cookie on the auth pages (/login, /signup, /forgot-password,
+  // /reset-password) plus the PKCE exchange endpoint (/auth/callback), so a
+  // logged-in user isn't left holding a stale token there. updateSession adds
+  // no role gate for those paths — access to them is unchanged.
+  matcher: [
+    '/admin/:path*',
+    '/dashboard/:path*',
+    '/login',
+    '/signup',
+    '/forgot-password',
+    '/reset-password',
+    '/auth/callback',
+  ],
 };

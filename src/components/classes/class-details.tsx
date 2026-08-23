@@ -5,6 +5,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
 import { Badge } from "@/components/ui/badge";
+import { CLASS_TYPE_LABELS, formatLocalizedNumber } from "@/lib/label-utils";
 import { CheckCircle2, Users, Clock } from "lucide-react";
 import { EnrollCta } from "@/components/classes/enroll-cta";
 import type { Class } from "@/lib/types";
@@ -88,7 +89,7 @@ export function ClassDetails({ classes, slug }: ClassDetailsProps) {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <div className="mb-8">
-              <Badge variant="secondary" className="mr-2">{classInfo.type}</Badge>
+              <Badge variant="secondary" className="mr-2 rtl:mr-0 rtl:ml-2">{CLASS_TYPE_LABELS[classInfo.type][language]}</Badge>
               <Badge variant="outline">{classInfo.level.toUpperCase()}</Badge>
               <h1 className="mt-4 font-headline text-4xl font-bold md:text-5xl">
                 {classInfo.title[language]}
@@ -146,7 +147,7 @@ export function ClassDetails({ classes, slug }: ClassDetailsProps) {
               {(classInfo.price || classInfo.price === 0) && (
                 <div className="my-4 rounded-lg bg-muted p-4 text-center">
                     <p className="text-sm text-muted-foreground">{content[language].price}</p>
-                    <p className="text-3xl font-bold text-primary">{classInfo.price.toLocaleString()} {content[language].currency}</p>
+                    <p className="text-3xl font-bold text-primary">{formatLocalizedNumber(classInfo.price, language)} {content[language].currency}</p>
                 </div>
               )}
 

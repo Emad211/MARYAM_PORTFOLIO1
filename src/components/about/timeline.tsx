@@ -28,7 +28,7 @@ export function Timeline({ timelineEvents }: { timelineEvents: TimelineEvent[] }
               {/* Year */}
               <div className="md:w-1/2 flex justify-start md:justify-end data-[side=right]:justify-start pt-2" data-side={index % 2 !== 0 ? 'right' : 'left'}>
                  <div className={`w-full text-left md:text-right data-[side=right]:md:text-left ${index % 2 !== 0 ? 'md:pl-16' : 'md:pr-16'}`} data-side={index % 2 !== 0 ? 'right' : 'left'}>
-                    <p className="font-headline text-4xl font-bold text-primary opacity-60">{event.year}</p>
+                    <p className="font-headline text-4xl font-bold text-primary">{event.year}</p>
                  </div>
               </div>
               

@@ -5,10 +5,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/context/language-context";
-import type { Post, HomeContent as HomeContentType } from "@/lib/types";
+import type { Post, Language, HomeContent as HomeContentType } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { POST_CATEGORY_LABELS } from "@/lib/label-utils";
+
+const heroImageAlts: Record<Language, string> = {
+  en: "Watercolor artwork with German words for culture and communication",
+  de: "Aquarell-Kunstwerk mit deutschen Woertern fuer Kultur und Kommunikation",
+  fa: "اثر آبرنگی با واژه‌های آلمانی درباره فرهنگ و ارتباط",
+};
+
+const teachingImageAlts: Record<Language, string> = {
+  en: "Books and coffee on a study desk",
+  de: "Buecher und Kaffee auf einem Lerntisch",
+  fa: "کتاب‌ها و قهوه روی میز مطالعه",
+};
 
 interface HomePageContentProps {
   homeContent: HomeContentType;
@@ -59,7 +72,7 @@ function HeroSection({ content }: { content: HomeContentType }) {
           <div className="relative flex justify-center items-center h-full min-h-[300px] md:min-h-[400px] md:order-2 rtl:md:order-1">
             <Image
               src="/flux-1-kontext-pro_A_dynamic_and_organiiiiii.png"
-              alt="Hero Image"
+              alt={heroImageAlts[language]}
               width={600}
               height={400}
               className="rounded-lg object-cover shadow-xl"
@@ -80,7 +93,7 @@ function MissionSection({ content }: { content: HomeContentType }) {
     <section className="bg-secondary py-20 md:py-24">
       <div className="container mx-auto max-w-4xl px-6 text-center">
         <h2 className="font-headline text-3xl font-bold md:text-4xl">{content.missionTitle[language]}</h2>
-        <p className="mt-4 text-lg text-secondary-foreground/80">{content.missionText[language]}</p>
+        <p className="mt-4 text-lg text-secondary-foreground">{content.missionText[language]}</p>
       </div>
     </section>
   );
@@ -97,8 +110,8 @@ function ManifestoSection({ content }: { content: HomeContentType }) {
                     {/* Image: LTR -> order 1, RTL -> order 2 */}
                     <div className="flex justify-center md:order-1 rtl:md:order-2">
                          <Image
-                            src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMXx8Ym9vayUyMGFuZCUyMGNvZmZlZSUyMHxlbnwwfHx8fDE3NTM4ODI4NzN8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                            alt="Teaching environment"
+                            src="/images/home-manifesto.jpg"
+                            alt={teachingImageAlts[language]}
                             width={500}
                             height={625}
                             className="rounded-lg object-cover shadow-xl"
@@ -144,7 +157,7 @@ function RecentPostsSection({ content, posts }: { content: HomeContentType, post
                 </div>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col p-6">
-                <Badge variant="outline" className="mb-2 w-fit">{post.category}</Badge>
+                <Badge variant="outline" className="mb-2 w-fit">{POST_CATEGORY_LABELS[post.category][language]}</Badge>
                 <CardTitle className="font-headline text-xl">
                   <Link href={`/blog/${post.slug}`}>{post.title[language]}</Link>
                 </CardTitle>
@@ -153,7 +166,7 @@ function RecentPostsSection({ content, posts }: { content: HomeContentType, post
               <CardFooter className="mt-auto p-6 pt-0">
                 <Button asChild variant="link" className="p-0 font-semibold">
                   <Link href={`/blog/${post.slug}`}>
-                    {content.readMore[language]} <ArrowRight className="ml-2 h-4 w-4" />
+                    {content.readMore[language]} <ArrowRight className="ms-2 h-4 w-4 rtl:rotate-180" />
                   </Link>
                 </Button>
               </CardFooter>

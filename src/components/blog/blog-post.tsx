@@ -5,9 +5,8 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
 import { Badge } from "@/components/ui/badge";
+import { POST_CATEGORY_LABELS, formatLocalizedDate } from "@/lib/label-utils";
 import { BlogCard } from "@/components/blog/blog-card";
-import { format } from "date-fns";
-import { getValidLocale } from "@/lib/type-utils";
 import type { Post } from "@/lib/types";
 
 const content = {
@@ -49,16 +48,14 @@ export function BlogPost({ posts, slug }: BlogPostProps) {
     .filter((p) => p.category === post.category && p.slug !== post.slug)
     .slice(0, 3);
     
-  const formattedDate = format(new Date(post.date), "PPP", {
-    locale: getValidLocale(language),
-  });
+  const formattedDate = formatLocalizedDate(post.date, language);
 
   return (
     <>
       <article className="py-16 md:py-24">
         <div className="container mx-auto max-w-4xl px-6">
           <header className="text-center">
-            <Badge variant="outline">{post.category}</Badge>
+            <Badge variant="outline">{POST_CATEGORY_LABELS[post.category][language]}</Badge>
             <h1 className="mt-4 font-headline text-4xl font-bold tracking-tight md:text-5xl">
               {post.title[language]}
             </h1>

@@ -4,7 +4,6 @@
 import { useLanguage } from "@/context/language-context";
 import { Mail, MapPin, Linkedin, Send } from "lucide-react";
 import { ContactForm } from "@/components/contact/contact-form";
-import { Metadata } from '@/components/layout/metadata';
 import type { ContactContent } from "@/lib/types";
 
 export function ContactPageContent({ contactContent }: { contactContent: ContactContent }) {
@@ -13,7 +12,6 @@ export function ContactPageContent({ contactContent }: { contactContent: Contact
 
   return (
     <>
-    <Metadata contactContent={content} pageType="contact" pagePath="/contact" />
     <div className="py-16 md:py-24 bg-secondary">
       <div className="container mx-auto max-w-7xl px-6">
         <div className="text-center">

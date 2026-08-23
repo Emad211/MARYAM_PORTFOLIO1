@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CLASS_TYPE_LABELS } from "@/lib/label-utils";
 import { Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DeleteConfirmationDialog } from "@/components/admin/delete-confirmation-dialog";
@@ -204,7 +205,7 @@ export function AdminClassesPageContent({ classes }: { classes: Class[] }) {
                     {classInfo.title[language]}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    <Badge variant="secondary">{classInfo.type}</Badge>
+                    <Badge variant="secondary">{CLASS_TYPE_LABELS[classInfo.type][language]}</Badge>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant="outline">{classInfo.level.toUpperCase()}</Badge>

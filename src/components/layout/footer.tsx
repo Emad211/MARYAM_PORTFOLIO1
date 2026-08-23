@@ -84,7 +84,7 @@ export function Footer() {
                </svg>
               <span className="font-headline text-xl font-bold">Fluentia</span>
             </Link>
-            <p className="mt-4 text-center text-sm text-secondary-foreground/80 sm:text-left">{content.description}</p>
+            <p className="mt-4 text-center text-sm text-secondary-foreground sm:text-left">{content.description}</p>
           </div>
           
           {/* Navigation */}
@@ -93,13 +93,13 @@ export function Footer() {
             <ul className="mt-4 space-y-3">
               {links.map(link => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-secondary-foreground/80 transition-colors hover:text-primary hover:underline">
+                  <Link href={link.href} className="text-sm text-secondary-foreground transition-colors hover:text-primary hover:underline">
                     {link.label}
                   </Link>
                 </li>
               ))}
               <li>
-                <Link href={adminLink[language].href} className="text-sm text-secondary-foreground/80 transition-colors hover:text-primary hover:underline">
+                <Link href={adminLink[language].href} className="text-sm text-secondary-foreground transition-colors hover:text-primary hover:underline">
                   {adminLink[language].label}
                 </Link>
               </li>
@@ -112,13 +112,13 @@ export function Footer() {
               <h3 className="font-headline text-lg font-semibold">{content.social}</h3>
               <ul className="mt-4 space-y-3">
                 <li>
-                  <a href={data.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 text-sm text-secondary-foreground/80 transition-colors hover:text-primary hover:underline">
+                  <a href={data.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 text-sm text-secondary-foreground transition-colors hover:text-primary hover:underline">
                     <Linkedin className="h-5 w-5" />
                     LinkedIn
                   </a>
                 </li>
                 <li>
-                  <a href={data.telegramUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 text-sm text-secondary-foreground/80 transition-colors hover:text-primary hover:underline">
+                  <a href={data.telegramUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 text-sm text-secondary-foreground transition-colors hover:text-primary hover:underline">
                     <Send className="h-5 w-5" />
                     Telegram
                   </a>
@@ -133,7 +133,7 @@ export function Footer() {
               <h3 className="font-headline text-lg font-semibold">{content.getInTouch}</h3>
               <ul className="mt-4 space-y-3">
                 <li>
-                  <a href={`mailto:${data.email}`} className="inline-flex items-center gap-3 text-sm text-secondary-foreground/80 transition-colors hover:text-primary hover:underline">
+                  <a href={`mailto:${data.email}`} className="inline-flex items-center gap-3 text-sm text-secondary-foreground transition-colors hover:text-primary hover:underline">
                     <Mail className="h-5 w-5" />
                     {data.email}
                   </a>
@@ -146,7 +146,7 @@ export function Footer() {
           )}
         </div>
         
-        <div className="mt-16 border-t border-border pt-8 text-center text-sm text-secondary-foreground/60">
+        <div className="mt-16 border-t border-border pt-8 text-center text-sm text-secondary-foreground">
           <p>&copy; {new Date().getFullYear()} Fluentia. {content.rights}</p>
         </div>
       </div>

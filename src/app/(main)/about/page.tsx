@@ -5,6 +5,12 @@ import { getAboutContent, getTimeline } from "@/lib/cms-store";
 // ISR: cached, regenerated on admin edit (revalidatePath('/about')) or hourly.
 export const revalidate = 3600;
 
+export const metadata = {
+  title: 'درباره من | مدرس زبان آلمانی',
+  description: 'داستان مسیر، صلاحیت‌ها و تجربه تدریس مدرس و ممتاز آزمون TestDaF.',
+  alternates: { canonical: '/about' },
+};
+
 export default async function AboutPage() {
   // Fetch data on the server
   const aboutContent = await getAboutContent();

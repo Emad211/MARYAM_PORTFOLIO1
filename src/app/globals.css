@@ -18,7 +18,7 @@
     --muted-foreground: 20 10% 30%;
     --accent: 98 8% 36%; /* Dark Olive Green */
     --accent-foreground: 35 43% 98%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 74% 42%; /* darkened from #EF4444 for 4.5:1 on card */
     --destructive-foreground: 0 0% 98%;
     --border: 35 20% 85%;
     --input: 35 20% 89%;

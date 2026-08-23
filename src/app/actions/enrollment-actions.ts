@@ -25,7 +25,7 @@ type ActionResult = { success: boolean; message: string };
 
 const signupSchema = z.object({
     name: z.string().trim().min(1).max(120),
-    phone: z.string().trim().min(3).max(40),
+    phone: z.string().trim().max(40).optional().default(''),
     email: z.string().trim().email().max(200),
     password: z.string().min(8).max(200),
     germanLevel: z.string().trim().max(40).optional(),

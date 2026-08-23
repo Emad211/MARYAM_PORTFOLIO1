@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { POST_CATEGORY_LABELS } from "@/lib/label-utils";
 import { Pencil, PlusCircle, Search, Trash2 } from "lucide-react";
 
 import Link from "next/link";
@@ -175,7 +176,7 @@ export function AdminBlogPageContent({ posts }: { posts: Post[] }) {
                     {post.title[language]}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    <Badge variant="outline">{post.category}</Badge>
+                    <Badge variant="outline">{POST_CATEGORY_LABELS[post.category][language]}</Badge>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {format(new Date(post.date), "PPP", { locale: getValidLocale(language) })}

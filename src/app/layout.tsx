@@ -1,5 +1,5 @@
-import type { Metadata } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import { Inter, Playfair_Display, Vazirmatn } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider";
@@ -21,13 +21,45 @@ const playfair = Playfair_Display({
   display: 'swap',
 });
 
+// Playfair has no Arabic glyphs; without this fa headlines fall back to system sans.
+const vazirmatn = Vazirmatn({
+  subsets: ['arabic', 'latin'],
+  variable: '--font-vazirmatn',
+  display: 'swap',
+});
+
 // This is the base metadata. It can be overridden by pages.
 export const metadata: Metadata = {
+  metadataBase: new URL('https://fluentiaa.ir'),
   title: {
-    default: 'Fluentia',
+    default: 'Fluentia | آموزش زبان آلمانی',
     template: `%s | Fluentia`,
   },
-  description: 'Learn languages with a master educator.',
+  description:
+    'یادگیری زبان آلمانی با مدرس و ممتاز آزمون TestDaF. کلاس‌های خصوصی، گروهی و کارگاه‌های تخصصی.',
+  openGraph: {
+    type: 'website',
+    siteName: 'Fluentia',
+    locale: 'fa_IR',
+    alternateLocale: ['de_DE', 'en_US'],
+    images: [{ url: '/teacher.jpg', width: 640, height: 640, alt: 'Fluentia' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Fluentia | آموزش زبان آلمانی',
+    description: 'کلاس‌های خصوصی، گروهی و کارگاه‌های تخصصی زبان آلمانی.',
+    images: ['/teacher.jpg'],
+  },
+  manifest: '/manifest.json',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F6F1E9' },
+    { media: '(prefers-color-scheme: dark)', color: '#1B0500' },
+  ],
 };
 
 export default async function RootLayout({
@@ -42,14 +74,9 @@ export default async function RootLayout({
   const contactContent = await getContactContent();
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#ffffff" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
-      <body className={`${inter.variable} ${playfair.variable} font-body antialiased`}>
+    // fa is the SSR content language; LanguageProvider flips lang/dir for en/de.
+    <html lang="fa" dir="rtl" suppressHydrationWarning>
+      <body className={`${inter.variable} ${playfair.variable} ${vazirmatn.variable} font-body antialiased`}>
         <AccessibleErrorBoundary>
           <ThemeProvider
               attribute="class"

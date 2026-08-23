@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { LogIn, Menu } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "./language-switcher";
 import { useLanguage } from "@/context/language-context";
 import { ModeToggle } from "../theme-toggle";
+import type { Language } from "@/lib/types";
 
 const navLinks = {
   en: [
@@ -36,6 +37,18 @@ const navLinks = {
   ],
 };
 
+const loginLabels: Record<Language, string> = {
+  en: "Sign In",
+  de: "Anmelden",
+  fa: "ورود",
+};
+
+const openMenuLabels: Record<Language, string> = {
+  en: "Open menu",
+  de: "Menü öffnen",
+  fa: "باز کردن منو",
+};
+
 function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2">
@@ -57,7 +70,6 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { language } = useLanguage();
   const links = navLinks[language];
-
   const NavLink = ({ href, label }: { href: string; label: string }) => (
     <Link
       href={href}
@@ -83,6 +95,12 @@ export function Header() {
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <ModeToggle />
+            <Button asChild size="sm" className="gap-2">
+              <Link href="/login" onClick={() => setIsOpen(false)}>
+                <LogIn className="h-4 w-4 rtl:rotate-180" />
+                {loginLabels[language]}
+              </Link>
+            </Button>
           </div>
         </nav>
 
@@ -91,7 +109,7 @@ export function Header() {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Menu className="h-6 w-6" />
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">{openMenuLabels[language]}</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[240px]">
@@ -99,6 +117,7 @@ export function Header() {
                 {links.map((link) => (
                   <NavLink key={link.href} {...link} />
                 ))}
+                <NavLink href="/login" label={loginLabels[language]} />
               </nav>
               <div className="mt-auto flex items-center gap-4">
                 <LanguageSwitcher />

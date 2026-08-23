@@ -160,14 +160,14 @@ export function getEmptyCMSData(): CMSData {
               de: "Kontaktinformationen",
               fa: "اطلاعات تماس"
             },
-            email: "info@fluentia.com",
+            email: "info@fluentiaa.ir",
             address: {
               en: "Berlin, Germany",
               de: "Berlin, Deutschland",
               fa: "برلین، آلمان"
             },
-            linkedinUrl: "https://www.linkedin.com/in/yourprofile",
-            telegramUrl: "https://t.me/yourprofile",
+            linkedinUrl: "",
+            telegramUrl: "",
             seo: {
               title: {
                 en: "Contact Fluentia",
@@ -202,7 +202,7 @@ export function getEmptyCMSData(): CMSData {
               author: "Fluentia",
               date: "2024-05-20T10:00:00Z",
               category: "language",
-              imageUrl: "https://images.unsplash.com/photo-1516476523928-1b4e85f40e79?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxncmFt mar%20bookfGVufDB8fHx8MTc1Mzg4MzM2Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+              imageUrl: "/images/blog-german-cases.jpg",
               imageHint: "grammar book",
               tags: [{ en: "grammar", de: "Grammatik", fa: "گرامر" }, { en: "cases", de: "Fälle", fa: "حالت‌ها" }],
               seo: {
@@ -238,7 +238,7 @@ export function getEmptyCMSData(): CMSData {
               author: "Fluentia",
               date: "2024-05-15T14:30:00Z",
               category: "culture",
-              imageUrl: "https://images.unsplash.com/photo-1596195217992-a7d1a2169622?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjbG9jayUyMGl uJTIwYmVybGlufGVufDB8fHx8MTc1Mzg4MzQzNXww&ixlib=rb-4.1.0&q=80&w=1080",
+              imageUrl: "/images/blog-puenktlichkeit.jpg",
               imageHint: "clock berlin",
               tags: [{ en: "culture", de: "Kultur", fa: "فرهنگ" }, { en: "etiquette", de: "Etikette", fa: "آداب معاشرت" }],
               seo: {
@@ -274,7 +274,7 @@ export function getEmptyCMSData(): CMSData {
               author: "Fluentia",
               date: "2024-05-10T09:00:00Z",
               category: "tips",
-              imageUrl: "https://images.unsplash.com/photo-1543269865-cbf427effbad?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsYW5ndWFnZSUyMGxlYXJuaW5nfGVufDB8fHx8MTc1Mzg4MzQ4Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+              imageUrl: "/images/blog-5-tips.jpg",
               imageHint: "language learning",
               tags: [{ en: "learning", de: "Lernen", fa: "یادگیری" }, { en: "tips", de: "Tipps", fa: "نکات" }, { en: "efficiency", de: "Effizienz", fa: "کارایی" }],
               seo: {
@@ -321,7 +321,7 @@ export function getEmptyCMSData(): CMSData {
               prerequisites: [
                 { en: "No prior knowledge of German is required.", de: "Keine Vorkenntnisse in Deutsch erforderlich.", fa: "هیچ دانش قبلی از زبان آلمانی لازم نیست." }
               ],
-              imageUrl: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjbGFzc3Jvb20lMjBsZWFybmluZ3xlbnwwfHx8fDE3NTM4ODM1Njd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+              imageUrl: "/images/class-a1-group.jpg",
               imageHint: "classroom learning",
               schedule: {
                 days: { en: "Mondays & Wednesdays", de: "Montags & Mittwochs", fa: "دوشنبه‌ها و چهارشنبه‌ها" },
@@ -372,7 +372,7 @@ export function getEmptyCMSData(): CMSData {
                 { en: "Solid B1 level German proficiency.", de: "Solide Deutschkenntnisse auf B1-Niveau.", fa: "تسلط کامل بر سطح B1 زبان آلمانی." },
                 { en: "Commitment to intensive self-study.", de: "Verpflichtung zu intensivem Selbststudium.", fa: "تعهد به مطالعه فشرده شخصی." }
               ],
-              imageUrl: "https://images.unsplash.com/photo-1517547196086-e6de1c21b2b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwcml2YXRlJTIwdHV0b3Jpbmd8ZW58MHx8fHwxNzUzODgzNTk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+              imageUrl: "/images/class-b2-private.jpg",
               imageHint: "private tutoring",
               schedule: {
                 days: { en: "Flexible scheduling", de: "Flexible Terminplanung", fa: "زمان‌بندی انعطاف‌پذیر" },
@@ -421,7 +421,7 @@ export function getEmptyCMSData(): CMSData {
               prerequisites: [
                 { en: "Minimum B1 level is recommended.", de: "Mindestens B1-Niveau wird empfohlen.", fa: "حداقل سطح B1 توصیه می‌شود." }
               ],
-              imageUrl: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGNvbnZlcnNhdGlvbnxlbnwwfHx8fDE3NTM4ODM2MzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+              imageUrl: "/images/class-workshop.jpg",
               imageHint: "business conversation",
               schedule: {
                 days: { en: "Next session: June 5th", de: "Nächste Sitzung: 5. Juni", fa: "جلسه بعدی: ۵ ژوئن" },

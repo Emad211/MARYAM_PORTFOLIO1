@@ -131,24 +131,22 @@ export function MessagesDataTable({ data }: MessagesDataTableProps) {
             <TableBody>
               {data.map((message) => (
                 <TableRow key={message.id}>
-                  <TableCell
-                    onClick={() => setSelectedMessage(message)}
-                    className="cursor-pointer"
-                  >
+                  <TableCell className="w-[200px]">
                     <div className="font-medium">{message.name}</div>
                     <div className="text-xs text-muted-foreground">{message.email}</div>
                   </TableCell>
-                  <TableCell
-                    onClick={() => setSelectedMessage(message)}
-                    className="cursor-pointer"
-                  >
-                    <p className="font-medium">{message.subject}</p>
-                    <p className="text-sm text-muted-foreground truncate max-w-md">{message.message}</p>
+                  <TableCell>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMessage(message)}
+                      className="w-full text-start rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <p className="font-medium hover:text-primary">{message.subject}</p>
+                      <p className="text-sm text-muted-foreground truncate max-w-md">{message.message}</p>
+                      <span className="sr-only">{t.actions}</span>
+                    </button>
                   </TableCell>
-                  <TableCell
-                    onClick={() => setSelectedMessage(message)}
-                    className="cursor-pointer text-xs text-muted-foreground"
-                  >
+                  <TableCell className="text-xs text-muted-foreground">
                     {format(new Date(message.submittedAt), "PPP p", { locale: getValidLocale(language) })}
                   </TableCell>
                   <TableCell className="text-right">

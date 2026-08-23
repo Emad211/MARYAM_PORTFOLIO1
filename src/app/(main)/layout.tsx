@@ -3,9 +3,17 @@
 
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { SkipLink } from "@/components/ui/accessibility";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { useLanguage } from "@/context/language-context";
 import { trackPageView } from "../actions/analytics-actions";
+
+const skipLabels: Record<string, string> = {
+  en: "Skip to main content",
+  de: "Zum Hauptinhalt springen",
+  fa: "پرش به محتوای اصلی",
+};
 
 function AnalyticsTracker() {
   const pathname = usePathname();
@@ -27,11 +35,16 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { language } = useLanguage();
+
   return (
     <div className="flex min-h-screen flex-col">
       <AnalyticsTracker />
+      <SkipLink href="#main-content">{skipLabels[language]}</SkipLink>
       <Header />
-      <main className="flex-1">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
+        {children}
+      </main>
       <Footer />
     </div>
   );

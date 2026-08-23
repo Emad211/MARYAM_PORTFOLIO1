@@ -17,6 +17,12 @@ const languages: { code: Language; name: string; localName: string }[] = [
   { code: 'fa', name: 'Persian', localName: 'فارسی' },
 ];
 
+const triggerLabels: Record<Language, string> = {
+  en: 'Change language',
+  de: 'Sprache ändern',
+  fa: 'تغییر زبان',
+};
+
 export function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
 
@@ -25,7 +31,7 @@ export function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
           <Globe className="h-5 w-5" />
-          <span className="sr-only">Change language</span>
+          <span className="sr-only">{triggerLabels[language]}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

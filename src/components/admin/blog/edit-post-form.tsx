@@ -227,7 +227,7 @@ export function EditPostForm({ posts, slug }: { posts: Post[], slug: string }) {
       <div className="flex items-center gap-4 mb-6">
         <Button variant="outline" size="icon" asChild>
             <Link href="/admin/blog">
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
             </Link>
         </Button>
         <div>

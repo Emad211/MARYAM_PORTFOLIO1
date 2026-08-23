@@ -91,3 +91,6 @@ next-env.d.ts
 .agents/
 .mcp.json
 skills-lock.json
+
+# opencode runtime state
+.omo/

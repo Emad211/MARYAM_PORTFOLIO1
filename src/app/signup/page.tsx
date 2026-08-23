@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/language-context';
 import { useAuth } from '@/context/auth-context';
 import { signUpStudent } from '@/app/actions/enrollment-actions';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 const signupContent = {
     en: {
@@ -20,7 +20,7 @@ const signupContent = {
         description: 'Sign up to enroll in classes with Fluentia.',
         nameLabel: 'Full Name',
         namePlaceholder: 'Your Name',
-        phoneLabel: 'Phone Number',
+        phoneLabel: 'Phone Number (optional)',
         phonePlaceholder: 'e.g., +1 234 567 8900',
         emailLabel: 'Email',
         passwordLabel: 'Password',
@@ -28,6 +28,9 @@ const signupContent = {
         levelLabel: 'Current German level (optional)',
         levelNone: 'Not sure',
         signUpButton: 'Sign Up',
+    termsNote: 'By signing up you agree to our terms of service and privacy policy.',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
         signingUp: 'Creating account...',
         errorTitle: 'Sign Up Failed',
         successTitle: 'Account Created',
@@ -45,7 +48,7 @@ const signupContent = {
         description: 'Registrieren Sie sich, um sich für Fluentia-Kurse anzumelden.',
         nameLabel: 'Vollständiger Name',
         namePlaceholder: 'Ihr Name',
-        phoneLabel: 'Telefonnummer',
+        phoneLabel: 'Telefonnummer (optional)',
         phonePlaceholder: 'z.B. +49 123 4567890',
         emailLabel: 'Email',
         passwordLabel: 'Passwort',
@@ -53,6 +56,9 @@ const signupContent = {
         levelLabel: 'Aktuelles Deutschniveau (optional)',
         levelNone: 'Nicht sicher',
         signUpButton: 'Registrieren',
+    termsNote: 'Mit der Registrierung akzeptieren Sie unsere Nutzungsbedingungen und Datenschutzerklärung.',
+    showPassword: 'Passwort anzeigen',
+    hidePassword: 'Passwort verbergen',
         signingUp: 'Konto wird erstellt...',
         errorTitle: 'Registrierung fehlgeschlagen',
         successTitle: 'Konto erstellt',
@@ -69,7 +75,7 @@ const signupContent = {
         description: 'برای ثبت‌نام در کلاس‌های Fluentia ثبت‌نام کنید.',
         nameLabel: 'نام کامل',
         namePlaceholder: 'نام شما',
-        phoneLabel: 'شماره تلفن',
+        phoneLabel: 'شماره تلفن (اختیاری)',
         phonePlaceholder: 'مثلا: ۰۹۱۲۳۴۵۶۷۸۹',
         emailLabel: 'ایمیل',
         passwordLabel: 'رمز عبور',
@@ -77,6 +83,9 @@ const signupContent = {
         levelLabel: 'سطح فعلی زبان آلمانی (اختیاری)',
         levelNone: 'مطمئن نیستم',
         signUpButton: 'ثبت‌نام',
+    termsNote: 'با ثبت‌نام، شرایط استفاده و حریم خصوصی را می‌پذیرید.',
+    showPassword: 'نمایش رمز',
+    hidePassword: 'پنهان کردن رمز',
         signingUp: 'در حال ساخت حساب...',
         errorTitle: 'ثبت‌نام ناموفق بود',
         successTitle: 'حساب ساخته شد',
@@ -113,6 +122,7 @@ export default function SignupPage() {
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [germanLevel, setGermanLevel] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
@@ -161,7 +171,7 @@ export default function SignupPage() {
         <div className="flex min-h-screen w-full">
             <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center bg-secondary">
                 <Image
-                    src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsaWJyYXJ5fGVufDB8fHx8MTc1MzkxMjM3Nnww&ixlib=rb-4.1.0&q=80&w=1080"
+                    src="/images/auth-library.jpg"
                     alt="Library"
                     fill
                     className="object-cover"
@@ -196,10 +206,10 @@ export default function SignupPage() {
                                     <Input
                                         id="phone"
                                         type="tel"
+                                        autoComplete="tel"
                                         placeholder={content.phonePlaceholder}
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
-                                        required
                                         className="h-11"
                                     />
                                 </div>
@@ -218,16 +228,26 @@ export default function SignupPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="password">{content.passwordLabel}</Label>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        autoComplete="new-password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                        minLength={8}
-                                        className="h-11"
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            id="password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            autoComplete="new-password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                            minLength={8}
+                                            className="h-11 pe-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword((v) => !v)}
+                                            aria-label={showPassword ? content.hidePassword : content.showPassword}
+                                            className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                        >
+                                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                     <p className="text-xs text-muted-foreground">{content.passwordHint}</p>
                                 </div>
                                 <div className="space-y-2">
@@ -247,6 +267,7 @@ export default function SignupPage() {
                                 <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
                                     {isLoading ? content.signingUp : content.signUpButton}
                                 </Button>
+                                <p className="text-center text-xs text-muted-foreground">{content.termsNote}</p>
                             </form>
                         </CardContent>
                     </Card>
@@ -259,7 +280,7 @@ export default function SignupPage() {
                         </p>
                         <Button variant="ghost" asChild>
                             <Link href="/" className="flex items-center gap-2">
-                                <ArrowLeft className="h-4 w-4" />
+                                <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
                                 {content.backToSite}
                             </Link>
                         </Button>

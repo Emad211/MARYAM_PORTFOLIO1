@@ -53,7 +53,7 @@ export function AboutContent({ aboutContent, timeline }: AboutContentProps) {
             <div className="order-1 md:order-2 flex justify-center">
               <Image
                 src="/teacher.jpg"
-                alt="Educator portrait"
+                alt={aboutContent.title[language]}
                 width={500}
                 height={500}
                 className="rounded-full object-cover shadow-lg aspect-square"

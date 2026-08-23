@@ -112,7 +112,7 @@ export function EditContentForm({
         <div className="flex items-center gap-4 mb-6">
             <Link href="/admin/settings">
                 <Button variant="outline" size="icon">
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
                 </Button>
             </Link>
             <div>

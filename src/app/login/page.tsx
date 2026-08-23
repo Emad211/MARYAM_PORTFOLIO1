@@ -12,7 +12,7 @@ import {Button} from '@/components/ui/button';
 import {useToast} from '@/hooks/use-toast';
 import { useLanguage } from '@/context/language-context';
 import { useAuth } from '@/context/auth-context';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 const loginContent = {
     en: {
@@ -28,7 +28,10 @@ const loginContent = {
         successMessage: 'Redirecting...',
         backToSite: 'Back to Site',
         noAccount: "Don't have an account?",
-        signUp: 'Sign up'
+        signUp: 'Sign up',
+        forgotPassword: 'Forgot password?',
+        showPassword: 'Show password',
+        hidePassword: 'Hide password'
     },
     de: {
         title: 'Anmelden',
@@ -43,7 +46,10 @@ const loginContent = {
         successMessage: 'Weiterleitung...',
         backToSite: 'Zurück zur Seite',
         noAccount: 'Noch kein Konto?',
-        signUp: 'Registrieren'
+        signUp: 'Registrieren',
+        forgotPassword: 'Passwort vergessen?',
+        showPassword: 'Passwort anzeigen',
+        hidePassword: 'Passwort verbergen'
     },
     fa: {
         title: 'ورود',
@@ -58,7 +64,10 @@ const loginContent = {
         successMessage: 'در حال هدایت...',
         backToSite: 'بازگشت به سایت',
         noAccount: 'حساب کاربری ندارید؟',
-        signUp: 'ثبت‌نام'
+        signUp: 'ثبت‌نام',
+        forgotPassword: 'رمز عبور را فراموش کرده‌اید؟',
+        showPassword: 'نمایش رمز',
+        hidePassword: 'پنهان کردن رمز'
     }
 }
 
@@ -83,6 +92,7 @@ function Logo() {
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -121,7 +131,7 @@ function LoginForm() {
     <div className="flex min-h-screen w-full">
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center bg-secondary">
          <Image 
-            src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsaWJyYXJ5fGVufDB8fHx8MTc1MzkxMjM3Nnww&ixlib=rb-4.1.0&q=80&w=1080"
+            src="/images/auth-library.jpg"
             alt="Library"
             fill
             className="object-cover"
@@ -145,7 +155,7 @@ function LoginForm() {
                         id="email"
                         type="email"
                         autoComplete="email"
-                        placeholder="admin@example.com"
+                        placeholder="you@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -154,15 +164,30 @@ function LoginForm() {
                     </div>
                     <div className="space-y-2">
                     <Label htmlFor="password">{content.passwordLabel}</Label>
-                    <Input
-                        id="password"
-                        type="password"
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="h-11"
-                    />
+                    <div className="relative">
+                        <Input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            autoComplete="current-password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            className="h-11 pe-10"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((v) => !v)}
+                            aria-label={showPassword ? content.hidePassword : content.showPassword}
+                            className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                    </div>
+                    <div className="text-end">
+                        <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary hover:underline">
+                            {content.forgotPassword}
+                        </Link>
+                    </div>
                     </div>
                     <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
                     {isLoading ? content.loggingIn : content.loginButton}
@@ -179,7 +204,7 @@ function LoginForm() {
                 </p>
                 <Button variant="ghost" asChild>
                     <Link href="/" className="flex items-center gap-2">
-                        <ArrowLeft className="h-4 w-4" />
+                        <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
                         {content.backToSite}
                     </Link>
                 </Button>

@@ -35,6 +35,10 @@ const formContent = {
     successDescription: "Thank you for your message. I'll get back to you soon.",
     errorTitle: "Sending Failed",
     errorDescription: "Something went wrong. Please try again.",
+    errName: "Name must be at least 2 characters.",
+    errEmail: "Please enter a valid email address.",
+    errSubject: "Subject must be at least 5 characters.",
+    errMessage: "Message must be at least 10 characters.",
   },
   de: {
     title: "Nachricht senden",
@@ -51,6 +55,10 @@ const formContent = {
     successDescription: "Vielen Dank für Ihre Nachricht. Ich melde mich bald bei Ihnen.",
     errorTitle: "Senden fehlgeschlagen",
     errorDescription: "Etwas ist schiefgegangen. Bitte versuchen Sie es erneut.",
+    errName: "Der Name muss mindestens 2 Zeichen lang sein.",
+    errEmail: "Bitte geben Sie eine gueltige E-Mail-Adresse ein.",
+    errSubject: "Der Betreff muss mindestens 5 Zeichen lang sein.",
+    errMessage: "Die Nachricht muss mindestens 10 Zeichen lang sein.",
   },
   fa: {
     title: "ارسال پیام",
@@ -67,23 +75,30 @@ const formContent = {
     successDescription: "از پیام شما متشکرم. به زودی با شما تماس خواهم گرفت.",
     errorTitle: "ارسال ناموفق بود",
     errorDescription: "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
+    errName: "نام باید حداقل ۲ نویسه باشد.",
+    errEmail: "لطفاً یک ایمیل معتبر وارد کنید.",
+    errSubject: "موضوع باید حداقل ۵ نویسه باشد.",
+    errMessage: "پیام باید حداقل ۱۰ نویسه باشد.",
   },
 };
 
-const FormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  subject: z.string().min(5, { message: "Subject must be at least 5 characters." }),
-  message: z.string().min(10, { message: "Message must be at least 10 characters." }),
-});
+const makeFormSchema = (m: { errName: string; errEmail: string; errSubject: string; errMessage: string }) =>
+  z.object({
+    name: z.string().min(2, { message: m.errName }),
+    email: z.string().email({ message: m.errEmail }),
+    subject: z.string().min(5, { message: m.errSubject }),
+    message: z.string().min(10, { message: m.errMessage }),
+  });
+
+type ContactFormValues = z.infer<ReturnType<typeof makeFormSchema>>;
 
 export function ContactForm() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const content = formContent[language];
 
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+  const form = useForm<ContactFormValues>({
+    resolver: zodResolver(makeFormSchema(content)),
     defaultValues: {
       name: "",
       email: "",
@@ -92,7 +107,7 @@ export function ContactForm() {
     },
   });
 
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
+  async function onSubmit(data: ContactFormValues) {
     const result = await saveContactMessage(data);
     
     if (result.success) {

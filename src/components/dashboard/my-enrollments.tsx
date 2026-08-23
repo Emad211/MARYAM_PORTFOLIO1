@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -19,7 +20,13 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cancelEnrollment } from '@/app/actions/enrollment-actions';
-import type { Class, Enrollment, EnrollmentStatus, Language } from '@/lib/types';
+import type {
+    Class,
+    ClassProgress,
+    Enrollment,
+    EnrollmentStatus,
+    Language,
+} from '@/lib/types';
 
 const content = {
     en: {
@@ -27,6 +34,9 @@ const content = {
         subtitle: 'Track the status of your class enrollments.',
         empty: "You haven't enrolled in any classes yet.",
         browse: 'Browse Classes',
+        continueTitle: 'Continue Learning',
+        continue: 'Continue',
+        lessonsProgress: '{done} of {total} lessons',
         enrolledOn: 'Enrolled',
         cancel: 'Cancel Enrollment',
         cancelConfirmTitle: 'Cancel this enrollment?',
@@ -47,6 +57,9 @@ const content = {
         subtitle: 'Verfolgen Sie den Status Ihrer Kursanmeldungen.',
         empty: 'Sie haben sich noch für keine Kurse angemeldet.',
         browse: 'Kurse ansehen',
+        continueTitle: 'Weiterlernen',
+        continue: 'Fortsetzen',
+        lessonsProgress: '{done} von {total} Lektionen',
         enrolledOn: 'Angemeldet',
         cancel: 'Anmeldung stornieren',
         cancelConfirmTitle: 'Diese Anmeldung stornieren?',
@@ -67,6 +80,9 @@ const content = {
         subtitle: 'وضعیت ثبت‌نام‌های خود در کلاس‌ها را دنبال کنید.',
         empty: 'هنوز در هیچ کلاسی ثبت‌نام نکرده‌اید.',
         browse: 'مشاهده کلاس‌ها',
+        continueTitle: 'ادامه یادگیری',
+        continue: 'ادامه',
+        lessonsProgress: '{done} از {total} درس',
         enrolledOn: 'تاریخ ثبت‌نام',
         cancel: 'لغو ثبت‌نام',
         cancelConfirmTitle: 'این ثبت‌نام لغو شود؟',
@@ -171,9 +187,11 @@ function EnrollmentCard({
 export function MyEnrollments({
     enrollments: initialEnrollments,
     classes,
+    progressMap,
 }: {
     enrollments: Enrollment[];
     classes: Class[];
+    progressMap: Record<string, ClassProgress>;
 }) {
     const { language } = useLanguage();
     const t = content[language];
@@ -186,12 +204,63 @@ export function MyEnrollments({
         return cls ? cls.title[language] : slug;
     };
 
+    // Continue-Learning candidates: approved seats that actually have
+    // curriculum progress to resume. `noUncheckedIndexedAccess` makes the
+    // lookup `ClassProgress | undefined`, so the guard doubles as the filter.
+    const continueRows = enrollments
+        .filter((e) => e.status === 'approved')
+        .map((e) => ({ slug: e.classSlug, progress: progressMap[e.classSlug] }))
+        .filter(
+            (row): row is { slug: string; progress: ClassProgress } =>
+                row.progress !== undefined && row.progress.total > 0
+        );
+
+    const formatNumber = (n: number): string =>
+        n.toLocaleString(language === 'fa' ? 'fa-IR' : language === 'de' ? 'de-DE' : 'en-US');
+
+    const lessonsCaption = (done: number, total: number): string =>
+        t.lessonsProgress.replace('{done}', formatNumber(done)).replace('{total}', formatNumber(total));
+
     return (
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
                 <p className="text-muted-foreground">{t.subtitle}</p>
             </div>
+
+            {continueRows.length > 0 && (
+                <section aria-labelledby="continue-learning-heading" className="space-y-3">
+                    <h2 id="continue-learning-heading" className="text-xl font-semibold">
+                        {t.continueTitle}
+                    </h2>
+                    <div className="space-y-3">
+                        {continueRows.map(({ slug, progress }) => (
+                            <Card key={slug}>
+                                <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="w-full space-y-2 sm:max-w-md">
+                                        <div className="flex items-baseline justify-between gap-2">
+                                            <h3 className="font-headline text-lg font-semibold">
+                                                {titleFor(slug)}
+                                            </h3>
+                                            <span className="shrink-0 text-sm text-muted-foreground">
+                                                {lessonsCaption(progress.done, progress.total)}
+                                            </span>
+                                        </div>
+                                        <Progress
+                                            value={Math.round((progress.done / progress.total) * 100)}
+                                            className="h-2"
+                                            aria-label={titleFor(slug)}
+                                        />
+                                    </div>
+                                    <Button asChild size="sm" className="shrink-0 self-start sm:self-auto">
+                                        <Link href={`/classes/${slug}/curriculum`}>{t.continue}</Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {enrollments.length === 0 ? (
                 <Card>

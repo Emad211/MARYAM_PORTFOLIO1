@@ -2,9 +2,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useLanguage } from "@/context/language-context";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { CLASS_TYPE_LABELS, formatLocalizedNumber } from "@/lib/label-utils";
 import { CheckCircle2, Users, Clock } from "lucide-react";
 import { EnrollCta } from "@/components/classes/enroll-cta";
@@ -18,6 +20,7 @@ const content = {
     students: "Max Students",
     price: "Price",
     currency: "Toman",
+    curriculum: "Curriculum",
     status: {
         active: "Active",
         full: "Class Full",
@@ -31,6 +34,7 @@ const content = {
     students: "Max. Teilnehmer",
     price: "Preis",
     currency: "Toman",
+    curriculum: "Lehrplan",
      status: {
         active: "Aktiv",
         full: "Kurs voll",
@@ -44,6 +48,7 @@ const content = {
     students: "حداکثر نفرات",
     price: "قیمت",
     currency: "تومان",
+    curriculum: "سرفصل‌ها",
      status: {
         active: "فعال",
         full: "ظرفیت تکمیل",
@@ -167,7 +172,14 @@ export function ClassDetails({ classes, slug }: ClassDetailsProps) {
                  )}
               </div>
               <hr className="my-6" />
-              <EnrollCta classInfo={classInfo} />
+              <div className="space-y-3">
+                <Button asChild variant="secondary" className="w-full">
+                  <Link href={`/classes/${classInfo.slug}/curriculum`}>
+                    {content[language].curriculum}
+                  </Link>
+                </Button>
+                <EnrollCta classInfo={classInfo} />
+              </div>
             </div>
           </div>
         </div>

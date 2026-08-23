@@ -8,10 +8,10 @@ import { LayoutDashboard, FileText, GraduationCap, Settings, UploadCloud, Messag
 import { useLanguage } from "@/context/language-context";
 import type { Language } from "@/lib/types";
 
-const sidebarLabels: Record<Language, { dashboard: string; messages: string; enrollments: string; blog: string; classes: string; deploy: string; settings: string }> = {
-  en: { dashboard: "Dashboard", messages: "Messages", enrollments: "Enrollments", blog: "Blog Posts", classes: "Classes", deploy: "Deploy", settings: "Settings" },
-  de: { dashboard: "Dashboard", messages: "Nachrichten", enrollments: "Anmeldungen", blog: "Blogbeiträge", classes: "Kurse", deploy: "Deployment", settings: "Einstellungen" },
-  fa: { dashboard: "داشبورد", messages: "پیام‌ها", enrollments: "ثبت‌نام‌ها", blog: "پست‌های وبلاگ", classes: "کلاس‌ها", deploy: "استقرار", settings: "تنظیمات" },
+const sidebarLabels: Record<Language, { dashboard: string; messages: string; enrollments: string; blog: string; classes: string; lms: string; deploy: string; settings: string }> = {
+  en: { dashboard: "Dashboard", messages: "Messages", enrollments: "Enrollments", blog: "Blog Posts", classes: "Classes", lms: "LMS Content", deploy: "Deploy", settings: "Settings" },
+  de: { dashboard: "Dashboard", messages: "Nachrichten", enrollments: "Anmeldungen", blog: "Blogbeiträge", classes: "Kurse", lms: "LMS-Inhalte", deploy: "Deployment", settings: "Einstellungen" },
+  fa: { dashboard: "داشبورد", messages: "پیام‌ها", enrollments: "ثبت‌نام‌ها", blog: "پست‌های وبلاگ", classes: "کلاس‌ها", lms: "محتوای LMS", deploy: "استقرار", settings: "تنظیمات" },
 };
 
 export function MainSidebar() {
@@ -25,6 +25,7 @@ export function MainSidebar() {
     { href: "/admin/registrations", label: t.enrollments, icon: UserCheck },
     { href: "/admin/blog", label: t.blog, icon: FileText },
     { href: "/admin/classes", label: t.classes, icon: GraduationCap },
+    { href: "/admin/lms", label: t.lms, icon: GraduationCap },
     { href: "/admin/deploy", label: t.deploy, icon: UploadCloud },
     { href: "/admin/settings", label: t.settings, icon: Settings },
   ];

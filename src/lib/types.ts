@@ -156,3 +156,35 @@ export interface Enrollment {
   submittedAt: string;
   decidedAt?: string;
 }
+
+// ---------------------------------------------------------------------------
+// LMS curriculum & exercises
+// ---------------------------------------------------------------------------
+
+export type LmsSkill = 'lesen' | 'hoeren' | 'schreiben' | 'sprechen' | 'allgemein';
+export type QuestionType = 'mc' | 'match' | 'jnl';
+export interface McOption { id: string; text: LocalizedString; }
+export interface McPayload { options: McOption[]; }
+export interface MatchItem { id: string; text: LocalizedString; }
+export interface MatchPayload { left: MatchItem[]; right: MatchItem[]; }
+export interface McAnswer { correct: string; }
+export interface JnlAnswer { correct: 'ja' | 'nein' | 'nichts'; }
+export interface MatchAnswer { mapping: Record<string, string>; } // leftId -> rightId
+export interface LmsQuestion {
+  id: string;
+  type: QuestionType;
+  prompt: LocalizedString;
+  payload?: McPayload | MatchPayload; // absent for jnl
+  points: number;
+}
+export interface LmsLesson {
+  id: string; moduleId: string;
+  title: LocalizedString; body: LocalizedString;
+  videoUrl?: string; skill: LmsSkill; durationMin?: number;
+  isFreePreview: boolean; sortOrder: number;
+}
+export interface CurriculumModule {
+  id: string; classSlug: string; title: LocalizedString;
+  sortOrder: number; lessons: LmsLesson[];
+}
+export interface ClassProgress { total: number; done: number; }

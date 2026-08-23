@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { LogIn, Menu } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "./language-switcher";
 import { useLanguage } from "@/context/language-context";
@@ -47,6 +47,12 @@ const openMenuLabels: Record<Language, string> = {
   en: "Open menu",
   de: "Menü öffnen",
   fa: "باز کردن منو",
+};
+
+const navMenuLabels: Record<Language, string> = {
+  en: "Navigation menu",
+  de: "Navigationsmenü",
+  fa: "منوی ناوبری",
 };
 
 function Logo() {
@@ -112,7 +118,10 @@ export function Header() {
                 <span className="sr-only">{openMenuLabels[language]}</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[240px]">
+            <SheetContent side="right" className="w-[240px]" aria-describedby={undefined}>
+              <SheetHeader className="sr-only">
+                <SheetTitle>{navMenuLabels[language]}</SheetTitle>
+              </SheetHeader>
               <nav className="flex flex-col gap-6 mt-12">
                 {links.map((link) => (
                   <NavLink key={link.href} {...link} />

@@ -7,7 +7,7 @@ import { useAuth } from '@/context/auth-context';
 import { useLanguage } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LogOut, ArrowLeft, LayoutDashboard, UserRound } from 'lucide-react';
+import { LogOut, ArrowLeft, LayoutDashboard, UserRound, CalendarDays, MessageCircle, Wallet } from 'lucide-react';
 import { NotificationBell } from '@/components/dashboard/notification-bell';
 
 const shellContent = {
@@ -17,9 +17,9 @@ const shellContent = {
 } as const;
 
 const navContent = {
-    en: { dashboard: 'Dashboard', profile: 'Profile' },
-    de: { dashboard: 'Übersicht', profile: 'Profil' },
-    fa: { dashboard: 'داشبورد', profile: 'پروفایل' },
+    en: { dashboard: 'Dashboard', profile: 'Profile', sessions: 'Sessions', messages: 'Messages', payments: 'Payments' },
+    de: { dashboard: 'Übersicht', profile: 'Profil', sessions: 'Termine', messages: 'Nachrichten', payments: 'Zahlungen' },
+    fa: { dashboard: 'داشبورد', profile: 'پروفایل', sessions: 'جلسات', messages: 'گفتگو', payments: 'پرداخت‌ها' },
 } as const;
 
 function DashboardSkeleton() {
@@ -111,6 +111,36 @@ function StudentArea({ children }: { children: React.ReactNode }) {
                         <Link href="/dashboard/profile" className="flex items-center gap-2">
                             <UserRound className="h-4 w-4" />
                             {nav.profile}
+                        </Link>
+                    </Button>
+                    <Button
+                        variant={pathname.startsWith('/dashboard/sessions') ? 'secondary' : 'ghost'}
+                        size="sm"
+                        asChild
+                    >
+                        <Link href="/dashboard/sessions" className="flex items-center gap-2">
+                            <CalendarDays className="h-4 w-4" />
+                            {nav.sessions}
+                        </Link>
+                    </Button>
+                    <Button
+                        variant={pathname.startsWith('/dashboard/messages') ? 'secondary' : 'ghost'}
+                        size="sm"
+                        asChild
+                    >
+                        <Link href="/dashboard/messages" className="flex items-center gap-2">
+                            <MessageCircle className="h-4 w-4" />
+                            {nav.messages}
+                        </Link>
+                    </Button>
+                    <Button
+                        variant={pathname.startsWith('/dashboard/payments') ? 'secondary' : 'ghost'}
+                        size="sm"
+                        asChild
+                    >
+                        <Link href="/dashboard/payments" className="flex items-center gap-2">
+                            <Wallet className="h-4 w-4" />
+                            {nav.payments}
                         </Link>
                     </Button>
                 </nav>

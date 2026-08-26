@@ -343,3 +343,55 @@ export interface GrammarTopic {
     examples: GrammarExample[];
     sortOrder: number;
 }
+export type AttendanceStatus = 'present' | 'absent' | 'excused' | 'pending';
+export interface LiveSession {
+    id: string;
+    classSlug: string;
+    title: LocalizedString;
+    startsAt: string;
+    durationMin: number;
+    meetingUrl?: string;
+    locationNote?: LocalizedString;
+}
+export interface SessionWithAttendance extends LiveSession {
+    attendance?: AttendanceStatus;
+}
+export interface RosterEntry {
+    userId: string;
+    name: string;
+    attendance: AttendanceStatus;
+}
+
+export interface ChatMessage {
+    id: string;
+    senderId: string;
+    recipientId: string;
+    body: string;
+    readAt?: string;
+    createdAt: string;
+}
+export interface ConversationSummary {
+    counterpartId: string;
+    counterpartName: string;
+    lastMessagePreview: string;
+    lastMessageAt: string;
+    unreadCount: number;
+}
+
+export type PaymentStatus = 'pending' | 'confirmed' | 'failed';
+export type PaymentMethod = 'cash' | 'bank_transfer' | 'card' | 'other';
+export type PaymentCurrency = 'EUR' | 'USD' | 'IRR';
+export interface PaymentRecord {
+    id: string;
+    userId: string;
+    classSlug?: string;
+    amount: number;
+    currency: PaymentCurrency;
+    method: PaymentMethod;
+    status: PaymentStatus;
+    paidAt?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    note?: string;
+    createdAt: string;
+}

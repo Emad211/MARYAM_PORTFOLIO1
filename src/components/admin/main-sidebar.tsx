@@ -4,14 +4,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarFooter } from "@/components/ui/sidebar";
-import { LayoutDashboard, FileText, GraduationCap, Settings, UploadCloud, MessageSquare, UserCheck, ClipboardCheck, ListChecks, Layers, BookOpen } from "lucide-react";
+import { LayoutDashboard, FileText, GraduationCap, Settings, UploadCloud, MessageSquare, UserCheck, ClipboardCheck, ListChecks, Layers, BookOpen, MessageCircle, CalendarDays, CreditCard } from "lucide-react";
 import { useLanguage } from "@/context/language-context";
 import type { Language } from "@/lib/types";
 
-const sidebarLabels: Record<Language, { dashboard: string; messages: string; enrollments: string; blog: string; classes: string; lms: string; grading: string; exams: string; vocab: string; grammar: string; deploy: string; settings: string }> = {
-  en: { dashboard: "Dashboard", messages: "Messages", enrollments: "Enrollments", blog: "Blog Posts", classes: "Classes", lms: "LMS Content", grading: "Grading Queue", exams: "Mock Exams", vocab: "Vocabulary", grammar: "Grammar Bank", deploy: "Deploy", settings: "Settings" },
-  de: { dashboard: "Dashboard", messages: "Nachrichten", enrollments: "Anmeldungen", blog: "Blogbeiträge", classes: "Kurse", lms: "LMS-Inhalte", grading: "Bewertungen", exams: "Probetests", vocab: "Wortschatz", grammar: "Grammatik", deploy: "Deployment", settings: "Einstellungen" },
-  fa: { dashboard: "داشبورد", messages: "پیام‌ها", enrollments: "ثبت‌نام‌ها", blog: "پست‌های وبلاگ", classes: "کلاس‌ها", lms: "محتوای LMS", grading: "صف تصحیح", exams: "آزمونهای آزمایشی", vocab: "واژگان", grammar: "بانک گرامر", deploy: "استقرار", settings: "تنظیمات" },
+const sidebarLabels: Record<Language, { dashboard: string; messages: string; enrollments: string; blog: string; classes: string; lms: string; grading: string; exams: string; vocab: string; grammar: string; chat: string; sessions: string; payments: string; deploy: string; settings: string }> = {
+  en: { dashboard: "Dashboard", messages: "Messages", enrollments: "Enrollments", blog: "Blog Posts", classes: "Classes", lms: "LMS Content", grading: "Grading Queue", exams: "Mock Exams", vocab: "Vocabulary", grammar: "Grammar Bank", chat: "Chat", sessions: "Sessions", payments: "Payments", deploy: "Deploy", settings: "Settings" },
+  de: { dashboard: "Dashboard", messages: "Nachrichten", enrollments: "Anmeldungen", blog: "Blogbeiträge", classes: "Kurse", lms: "LMS-Inhalte", grading: "Bewertungen", exams: "Probetests", vocab: "Wortschatz", grammar: "Grammatik", chat: "Chat", sessions: "Termine", payments: "Zahlungen", deploy: "Deployment", settings: "Einstellungen" },
+  fa: { dashboard: "داشبورد", messages: "پیام‌ها", enrollments: "ثبت‌نام‌ها", blog: "پست‌های وبلاگ", classes: "کلاس‌ها", lms: "محتوای LMS", grading: "صف تصحیح", exams: "آزمونهای آزمایشی", vocab: "واژگان", grammar: "بانک گرامر", chat: "گفتگو", sessions: "جلسات", payments: "پرداخت‌ها", deploy: "استقرار", settings: "تنظیمات" },
 };
 
 export function MainSidebar() {
@@ -30,6 +30,9 @@ export function MainSidebar() {
     { href: "/admin/exams", label: t.exams, icon: ListChecks },
     { href: "/admin/vocab", label: t.vocab, icon: Layers },
     { href: "/admin/grammar", label: t.grammar, icon: BookOpen },
+    { href: "/admin/sessions", label: t.sessions, icon: CalendarDays },
+    { href: "/admin/inbox", label: t.chat, icon: MessageCircle },
+    { href: "/admin/payments", label: t.payments, icon: CreditCard },
     { href: "/admin/deploy", label: t.deploy, icon: UploadCloud },
     { href: "/admin/settings", label: t.settings, icon: Settings },
   ];

@@ -31,6 +31,7 @@ const content = {
             nichts: "Doesn't say",
         },
         matchPlaceholder: 'Choose...',
+        audioLabel: 'Audio',
         failures: {
             invalid_input: 'Please answer every question first.',
             unauthorized: 'Please sign in to check your answers.',
@@ -53,6 +54,7 @@ const content = {
             nichts: 'Steht nicht im Text',
         },
         matchPlaceholder: 'Auswählen...',
+        audioLabel: 'Hören',
         failures: {
             invalid_input: 'Bitte beantworten Sie zuerst alle Fragen.',
             unauthorized: 'Bitte melden Sie sich an, um Ihre Antworten zu prüfen.',
@@ -75,6 +77,7 @@ const content = {
             nichts: 'در متن نیامده',
         },
         matchPlaceholder: 'انتخاب کنید...',
+        audioLabel: 'صوت',
         failures: {
             invalid_input: 'لطفاً ابتدا به همه پرسش‌ها پاسخ دهید.',
             unauthorized: 'برای بررسی پاسخ‌ها لطفاً وارد شوید.',
@@ -104,6 +107,11 @@ function isAnswered(
 
 function fillTemplate(template: string, values: Record<string, string>): string {
     return template.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match);
+}
+
+/** Public object URL inside the 'listening' storage bucket. */
+function buildListeningUrl(path: string): string {
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listening/${path}`;
 }
 
 export function ExercisePlayer({ questions }: { questions: LmsQuestion[] }) {
@@ -215,6 +223,19 @@ export function ExercisePlayer({ questions }: { questions: LmsQuestion[] }) {
                 </div>
 
                 <div className="space-y-4">
+                    {question.audioPath && (
+                        <div className="space-y-1">
+                            <p className="text-sm font-medium">{t.audioLabel}</p>
+                            {/* Practice mode: unlimited replays — the play-capped
+                                player lives only in the mock-exam runner. */}
+                            <audio
+                                controls
+                                preload="none"
+                                src={buildListeningUrl(question.audioPath)}
+                                className="w-full"
+                            />
+                        </div>
+                    )}
                     <div className="flex items-start justify-between gap-3">
                         <p className="text-base font-medium leading-relaxed">
                             {question.prompt[language]}

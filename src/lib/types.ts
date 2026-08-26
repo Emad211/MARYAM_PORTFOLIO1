@@ -1,4 +1,6 @@
 
+import type { TdnBand } from '@/lib/exam-blueprints';
+
 export type Language = 'en' | 'de' | 'fa';
 
 export type LocalizedString = {
@@ -175,6 +177,8 @@ export interface LmsQuestion {
   type: QuestionType;
   prompt: LocalizedString;
   payload?: McPayload | MatchPayload; // absent for jnl
+  audioPath?: string; // storage path in public 'listening' bucket (hoeren only)
+  playsAllowed?: number; // 0 none / 1 once / 2 twice
   points: number;
 }
 export interface LmsLesson {
@@ -224,4 +228,57 @@ export interface NotificationItem {
     payload: Record<string, unknown>;
     read: boolean;
     createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Mock exam simulator (TestDaF Lesen/Hoeren sessions)
+// ---------------------------------------------------------------------------
+
+export type MockSectionKind = 'lesen' | 'hoeren';
+export type MockSessionStatus = 'in_progress' | 'completed' | 'abandoned';
+export interface MockExamSummary {
+    id: string;
+    code: string;
+    title: LocalizedString;
+    isActive: boolean;
+    totalDurationMin: number;
+    questionCount: number;
+}
+export interface MockSectionRunner {
+    id: string;
+    section: MockSectionKind;
+    durationMin: number;
+    sortOrder: number;
+    questions: LmsQuestion[];
+}
+export interface MockSessionInfo {
+    id: string;
+    examId: string;
+    status: MockSessionStatus;
+    startedAt: string;
+    expiresAt: string;
+}
+export interface SectionOutcome {
+    sectionId: string;
+    section: MockSectionKind;
+    raw: number;
+    max: number;
+    band: TdnBand;
+}
+export interface ReviewItem {
+    question: LmsQuestion;
+    given: McAnswer | JnlAnswer | MatchAnswer | null;
+    correct: McAnswer | JnlAnswer | MatchAnswer | null;
+}
+export interface MockSessionResults {
+    sessionId: string;
+    examCode: string;
+    completedAt?: string;
+    sections: SectionOutcome[];
+    review: ReviewItem[];
+}
+export interface MockHistoryEntry {
+    sessionId: string;
+    completedAt: string;
+    percent: number;
 }

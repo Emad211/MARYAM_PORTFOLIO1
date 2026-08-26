@@ -42,16 +42,19 @@ const navLinks = {
     { href: "/about", label: "About" },
     { href: "/classes", label: "Classes" },
     { href: "/blog", label: "Blog" },
+    { href: "/grammar", label: "Grammar" },
   ],
   de: [
     { href: "/about", label: "Über mich" },
     { href: "/classes", label: "Kurse" },
     { href: "/blog", label: "Blog" },
+    { href: "/grammar", label: "Grammatik" },
   ],
   fa: [
     { href: "/about", label: "درباره من" },
     { href: "/classes", label: "کلاس‌ها" },
     { href: "/blog", label: "بلاگ" },
+    { href: "/grammar", label: "بانک گرامر" },
   ],
 };
 

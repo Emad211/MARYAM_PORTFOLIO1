@@ -13,6 +13,9 @@ import type {
     Profile,
     Enrollment,
     EnrollmentStatus,
+    GrammarTopic,
+    GrammarExample,
+    LocalizedString,
 } from './types';
 import { getEmptyCMSData } from './empty-data';
 import {
@@ -413,4 +416,134 @@ export async function countApprovedEnrollments(classSlug: string): Promise<numbe
         .eq('status', 'approved');
     if (error) throw error;
     return count ?? 0;
+}
+
+// ---------------------------------------------------------------------------
+// Grammar bank (public read). Topics power the SEO-friendly /grammar index
+// and detail pages; lesson_grammar links topics into the LMS curriculum so a
+// topic page can point at the lessons that teach it.
+// ---------------------------------------------------------------------------
+
+interface GrammarTopicRow {
+    id: string;
+    slug: string;
+    title: unknown;
+    level: string;
+    explanation: unknown;
+    examples: unknown;
+    sort_order: number;
+}
+
+// examples jsonb is [{de,en,fa}, ...]; drop malformed entries instead of
+// trusting the column shape (same defensive-JSONB stance as site_content).
+function toGrammarExamples(raw: unknown): GrammarExample[] {
+    if (!Array.isArray(raw)) return [];
+    const out: GrammarExample[] = [];
+    for (const entry of raw) {
+        if (typeof entry !== 'object' || entry === null) continue;
+        const ex = entry as Record<string, unknown>;
+        if (
+            typeof ex.de === 'string' &&
+            typeof ex.en === 'string' &&
+            typeof ex.fa === 'string'
+        ) {
+            out.push({ de: ex.de, en: ex.en, fa: ex.fa });
+        }
+    }
+    return out;
+}
+
+function rowToGrammarTopic(row: GrammarTopicRow): GrammarTopic {
+    return {
+        id: row.id,
+        slug: row.slug,
+        title: row.title as GrammarTopic['title'],
+        level: row.level as GrammarTopic['level'],
+        explanation: row.explanation as GrammarTopic['explanation'],
+        examples: toGrammarExamples(row.examples),
+        sortOrder: row.sort_order,
+    };
+}
+
+export async function getGrammarTopics(): Promise<GrammarTopic[]> {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+        .from('grammar_topics')
+        .select('*')
+        .order('level', { ascending: true })
+        .order('sort_order', { ascending: true });
+
+    if (error) {
+        console.error('Failed to load grammar topics:', error);
+        return [];
+    }
+    return (data as GrammarTopicRow[]).map(rowToGrammarTopic);
+}
+
+export async function getGrammarTopicBySlug(slug: string): Promise<GrammarTopic | null> {
+    const supabase = createPublicClient();
+    const { data, error } = await supabase
+        .from('grammar_topics')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle();
+
+    if (error) {
+        console.error(`Failed to load grammar topic '${slug}':`, error);
+        return null;
+    }
+    return data ? rowToGrammarTopic(data as GrammarTopicRow) : null;
+}
+
+export interface TopicLesson {
+    id: string;
+    title: LocalizedString;
+    classSlug: string;
+}
+
+// Two queries: the join rows first, then the lessons themselves. class_slug
+// lives on modules (lessons -> module_id), so the second query embeds it via
+// the FK relationship instead of a third round-trip.
+export async function getLessonsForTopic(topicId: string): Promise<TopicLesson[]> {
+    const supabase = createPublicClient();
+
+    const { data: links, error: linkError } = await supabase
+        .from('lesson_grammar')
+        .select('lesson_id')
+        .eq('topic_id', topicId);
+    if (linkError) {
+        console.error('Failed to load lesson_grammar links:', linkError);
+        return [];
+    }
+    const lessonIds = ((links as { lesson_id: string }[] | null) ?? []).map(l => l.lesson_id);
+    if (lessonIds.length === 0) return [];
+
+    // PostgREST may deliver the many-to-one embed as object or single-element
+    // array depending on relationship detection — accept both.
+    interface LessonWithClassRow {
+        id: string;
+        title: unknown;
+        modules: { class_slug: string } | { class_slug: string }[] | null;
+    }
+    const { data, error } = await supabase
+        .from('lessons')
+        .select('id, title, modules(class_slug)')
+        .in('id', lessonIds)
+        .order('sort_order', { ascending: true });
+
+    if (error) {
+        console.error('Failed to load lessons for grammar topic:', error);
+        return [];
+    }
+    return (((data ?? []) as unknown) as LessonWithClassRow[])
+        .map(row => {
+            const moduleRecord = Array.isArray(row.modules) ? row.modules[0] : row.modules;
+            return {
+                id: row.id,
+                title: row.title as LocalizedString,
+                classSlug:
+                    typeof moduleRecord?.class_slug === 'string' ? moduleRecord.class_slug : '',
+            };
+        })
+        .filter(lesson => lesson.classSlug !== '');
 }

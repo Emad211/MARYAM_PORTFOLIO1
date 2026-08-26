@@ -282,3 +282,64 @@ export interface MockHistoryEntry {
     completedAt: string;
     percent: number;
 }
+
+export type VocabDomain =
+  | 'alltag'
+  | 'studium'
+  | 'umwelt'
+  | 'arbeit_wirtschaft'
+  | 'medien'
+  | 'gesellschaft';
+export type CardWordType = 'noun' | 'verb' | 'adjective' | 'phrase' | 'other';
+export type ReviewGrade = 'again' | 'hard' | 'good' | 'easy';
+export interface VocabDeck {
+    id: string;
+    title: LocalizedString;
+    description?: LocalizedString;
+    domain: VocabDomain;
+    classSlug?: string;
+    isActive: boolean;
+    sortOrder: number;
+}
+export interface VocabCard {
+    id: string;
+    deckId: string;
+    frontDe: string;
+    wordType: CardWordType;
+    hint?: LocalizedString;
+    exampleDe?: string;
+    exampleEn?: string;
+    exampleFa?: string;
+    sortOrder: number;
+}
+export interface DueCard extends VocabCard {
+    isNew: boolean;
+    dueAt?: string;
+}
+export interface VocabDeckStat {
+    deck: VocabDeck;
+    totalCards: number;
+    dueCount: number;
+}
+export interface VocabDashboardData {
+    decks: VocabDeckStat[];
+    dueTotal: number;
+    streakDays: number;
+    studiedToday: boolean;
+    reviewsToday: number;
+}
+export type GrammarLevel = 'a1' | 'a2' | 'b1' | 'b2' | 'c1' | 'c2';
+export interface GrammarExample {
+    de: string;
+    en: string;
+    fa: string;
+}
+export interface GrammarTopic {
+    id: string;
+    slug: string;
+    title: LocalizedString;
+    level: GrammarLevel;
+    explanation: LocalizedString;
+    examples: GrammarExample[];
+    sortOrder: number;
+}

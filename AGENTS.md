@@ -166,6 +166,7 @@ Server page fetches via `cms-store` → passes ALL languages as props → client
 | `SUPABASE_ACCESS_TOKEN` | Management API token (sbp_...) for apply-schema/advisors scripts; pass inline, never commit |
 
 ⚠️ `.env.local.example` is incomplete (missing Supabase vars). Hard-coded project ref `uptxnousjzidadoviavu` exists in apply-schema.mjs + advisors.mjs. No `.env*` committed (good). Test creds `admin@example.com/password` hardcoded in ≥7 test files.
+⚠️ **Local signup requires `SUPABASE_SERVICE_ROLE_KEY` inside `.env.local`** — `signUpStudent` calls `auth.admin.createUser` via `createAdminClient()`, which throws without it, so browser-signup 500s locally while production (Vercel) works. Placeholder comment sits in `.env.local`; paste the dashboard key there and restart dev. Test students seeded directly into `auth.users`+`profiles`: `sara.test@example.com`, `lina.test@example.com` (password `Test1234!`, approved in free workshop).
 
 ## 8. Testing & CI
 

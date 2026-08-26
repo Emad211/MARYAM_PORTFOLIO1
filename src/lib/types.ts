@@ -188,3 +188,40 @@ export interface CurriculumModule {
   sortOrder: number; lessons: LmsLesson[];
 }
 export interface ClassProgress { total: number; done: number; }
+
+// ---------------------------------------------------------------------------
+// Productive-skill practice, teacher feedback & notification inbox
+// ---------------------------------------------------------------------------
+
+export type ProductiveSkill = 'schreiben' | 'sprechen';
+export interface OpenTask {
+    id: string;
+    lessonId: string;
+    skill: ProductiveSkill;
+    prompt: LocalizedString;
+    timeLimitMin?: number;
+    wordMin?: number;
+    wordMax?: number;
+    sortOrder: number;
+}
+export interface RubricScores { wirkung: number; aufgabe: number; sprache: number; } // each 1..5
+export interface SubmissionRecord {
+    id: string;
+    taskId: string;
+    kind: 'text' | 'audio';
+    body?: string;
+    filePath?: string;
+    teacherFeedback?: string;
+    rubricScores?: RubricScores;
+    status: 'pending' | 'graded';
+    submittedAt: string;
+    decidedAt?: string;
+}
+export interface SubmissionWithTask extends SubmissionRecord { task: OpenTask; }
+export interface NotificationItem {
+    id: string;
+    type: 'submission_graded' | 'enrollment_decided' | 'system';
+    payload: Record<string, unknown>;
+    read: boolean;
+    createdAt: string;
+}

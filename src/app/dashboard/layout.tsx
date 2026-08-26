@@ -8,6 +8,7 @@ import { useLanguage } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LogOut, ArrowLeft, LayoutDashboard, UserRound } from 'lucide-react';
+import { NotificationBell } from '@/components/dashboard/notification-bell';
 
 const shellContent = {
     en: { site: 'Back to Site', logout: 'Log Out', greeting: 'My Account' },
@@ -84,6 +85,7 @@ function StudentArea({ children }: { children: React.ReactNode }) {
                                 <span className="hidden sm:inline">{content.site}</span>
                             </Link>
                         </Button>
+                        {isStudent ? <NotificationBell /> : null}
                         <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2">
                             <LogOut className="h-4 w-4" />
                             <span className="hidden sm:inline">{content.logout}</span>

@@ -19,9 +19,10 @@ import {
     Lock,
 } from 'lucide-react';
 import { ExercisePlayer } from '@/components/lms/exercise-player';
+import { OpenTasksSection } from '@/components/lms/open-tasks-section';
 import { toggleLessonComplete } from '@/app/actions/lms-actions';
 import { SKILL_LABELS, formatLocalizedNumber } from '@/lib/label-utils';
-import type { LmsLesson, LmsQuestion, LocalizedString } from '@/lib/types';
+import type { LmsLesson, LmsQuestion, LocalizedString, OpenTask } from '@/lib/types';
 
 const content = {
     en: {
@@ -182,12 +183,14 @@ export function LessonView({
     moduleTitle,
     classSlug,
     exercises,
+    tasks,
     initialDone,
 }: {
     lesson: LmsLesson;
     moduleTitle: LocalizedString;
     classSlug: string;
     exercises: LmsQuestion[];
+    tasks?: OpenTask[];
     initialDone: boolean;
 }) {
     const { language } = useLanguage();
@@ -257,6 +260,10 @@ export function LessonView({
                         </div>
 
                         <ExercisePlayer questions={exercises} />
+
+                        {tasks && tasks.length > 0 ? (
+                            <OpenTasksSection tasks={tasks} />
+                        ) : null}
 
                         <div className="flex justify-center border-t pt-8">
                             <MarkCompleteToggle

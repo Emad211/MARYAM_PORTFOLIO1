@@ -5,6 +5,7 @@ import {
     getLessonPage,
     getStudentProgress,
 } from '@/app/actions/lms-actions';
+import { getTasksForLesson } from '@/app/actions/submissions-actions';
 
 // Lesson content is per-user gated (auth + progress), so this page renders
 // dynamically. The gate itself resolves in the browser via <LessonGate>.
@@ -16,10 +17,11 @@ export default async function LessonPage({
     params: Promise<{ slug: string; id: string }>;
 }) {
     const { slug, id } = await params;
-    const [lessonPage, exercises, progress] = await Promise.all([
+    const [lessonPage, exercises, progress, tasks] = await Promise.all([
         getLessonPage(id),
         getLessonExercises(id),
         getStudentProgress(),
+        getTasksForLesson(id),
     ]);
 
     // Unknown lesson id — or a lesson that belongs to a different class than
@@ -34,6 +36,7 @@ export default async function LessonPage({
             moduleTitle={lessonPage.moduleTitle}
             classSlug={lessonPage.classSlug}
             exercises={exercises}
+            tasks={tasks}
             initialDone={Boolean(progress[id])}
         />
     );

@@ -94,3 +94,6 @@ skills-lock.json
 
 # opencode runtime state
 .omo/
+
+dev*.log
+dev*.err.log

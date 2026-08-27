@@ -47,13 +47,13 @@ function AdminArea({ children }: { children: React.ReactNode }) {
 
     return (
         <SidebarProvider>
-            <div className="flex h-screen">
+            <div className="flex h-screen w-full">
                 <Sidebar side="right">
                     <MainSidebar />
                 </Sidebar>
-                <div className="flex flex-1 flex-col">
+                <div className="flex min-w-0 flex-1 flex-col">
                     <Header />
-                    <main className="flex-1 overflow-y-auto p-8 bg-muted/40">
+                    <main className="flex-1 overflow-y-auto p-6 bg-muted/40">
                         {children}
                     </main>
                 </div>

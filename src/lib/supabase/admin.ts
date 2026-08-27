@@ -16,14 +16,24 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
  * client authenticates purely via the service-role key.
  */
 export function createAdminClient() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceKey) {
+    // Fail with an actionable message instead of supabase-js's bare
+    // "supabaseKey is required" — this only ever happens in local dev
+    // where .env.local lacks the service key (production/Vercel has it).
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is not set. Add it to .env.local ' +
+        '(Supabase Dashboard → Project Settings → API → service_role key) ' +
+        'and restart the dev server.'
+    );
+  }
+
+  return createSupabaseClient(url, serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }

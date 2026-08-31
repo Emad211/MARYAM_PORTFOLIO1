@@ -64,6 +64,20 @@ function readLocalized(formData: FormData, prefix: string): LocalizedString | nu
   return { en, de, fa };
 }
 
+/**
+ * Optional trilingual triple: omitted entirely when all three fields are
+ * blank; otherwise blank slots fall back to whichever value exists so the
+ * stored jsonb keeps the no-empty-hole invariant.
+ */
+function readLocalizedOptional(formData: FormData, prefix: string): LocalizedString | null {
+  const en = str(formData, `${prefix}En`).trim();
+  const de = str(formData, `${prefix}De`).trim();
+  const fa = str(formData, `${prefix}Fa`).trim();
+  if (!en && !de && !fa) return null;
+  const fallback = fa || en || de;
+  return { en: en || fallback, de: de || fallback, fa: fallback };
+}
+
 const localizedSchema = z.object({
   en: z.string().min(1),
   de: z.string().min(1),
@@ -257,6 +271,7 @@ export async function upsertExamQuestion(formData: FormData): Promise<ActionResu
   const type = str(formData, 'type');
   const audioRaw = str(formData, 'audioPath').trim();
   const playsRaw = optionalInt(formData, 'playsAllowed');
+  const explanationInput = readLocalizedOptional(formData, 'explanation');
   const baseFields = {
     ...(rawId ? { id: rawId } : {}),
     sectionId: str(formData, 'sectionId').trim(),
@@ -389,6 +404,7 @@ export async function upsertExamQuestion(formData: FormData): Promise<ActionResu
       ...(metaParsed.data.playsAllowed !== undefined
         ? { plays_allowed: metaParsed.data.playsAllowed }
         : {}),
+      ...(explanationInput ? { explanation: explanationInput } : {}),
     };
     let savedId = shared.id;
     if (savedId !== undefined) {

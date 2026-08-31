@@ -180,6 +180,7 @@ export interface LmsQuestion {
   audioPath?: string; // storage path in public 'listening' bucket (hoeren only)
   playsAllowed?: number; // 0 none / 1 once / 2 twice
   points: number;
+  explanation?: LocalizedString; // shown to the student after grading
 }
 export interface LmsLesson {
   id: string; moduleId: string;
@@ -352,6 +353,7 @@ export interface LiveSession {
     durationMin: number;
     meetingUrl?: string;
     locationNote?: LocalizedString;
+    notes?: string;
 }
 export interface SessionWithAttendance extends LiveSession {
     attendance?: AttendanceStatus;
@@ -393,5 +395,29 @@ export interface PaymentRecord {
     periodStart?: string;
     periodEnd?: string;
     note?: string;
+    createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Teacher-ease wave: homework assignments & inline submission annotations
+// ---------------------------------------------------------------------------
+
+export interface HomeworkAssignment {
+    id: string;
+    classSlug: string;
+    lessonId: string;
+    dueAt: string;
+    createdAt: string;
+}
+export interface HomeworkItem extends HomeworkAssignment {
+    lesson: LmsLesson;
+    done: boolean;
+}
+export interface SubmissionAnnotation {
+    id: string;
+    submissionId: string;
+    startOffset: number;
+    endOffset: number;
+    comment: string;
     createdAt: string;
 }

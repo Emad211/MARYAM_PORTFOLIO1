@@ -63,6 +63,20 @@ function readLocalized(formData: FormData, prefix: string): LocalizedString | nu
   return { en, de, fa };
 }
 
+/**
+ * Optional trilingual triple: omitted entirely when all three fields are
+ * blank; otherwise blank slots fall back to whichever value exists so the
+ * stored jsonb keeps the no-empty-hole invariant.
+ */
+function readLocalizedOptional(formData: FormData, prefix: string): LocalizedString | null {
+  const en = str(formData, `${prefix}En`).trim();
+  const de = str(formData, `${prefix}De`).trim();
+  const fa = str(formData, `${prefix}Fa`).trim();
+  if (!en && !de && !fa) return null;
+  const fallback = fa || en || de;
+  return { en: en || fallback, de: de || fallback, fa: fallback };
+}
+
 const localizedSchema = z.object({
   en: z.string().min(1),
   de: z.string().min(1),
@@ -268,6 +282,7 @@ export async function upsertLmsQuestion(formData: FormData): Promise<ActionResul
 
   const rawId = str(formData, 'id').trim();
   const type = str(formData, 'type');
+  const explanationInput = readLocalizedOptional(formData, 'explanation');
   const baseFields = {
     ...(rawId ? { id: rawId } : {}),
     lessonId: str(formData, 'lessonId').trim(),
@@ -386,6 +401,7 @@ export async function upsertLmsQuestion(formData: FormData): Promise<ActionResul
       answer_key: answerKey,
       points: shared.points,
       sort_order: shared.sortOrder,
+      ...(explanationInput ? { explanation: explanationInput } : {}),
     };
     let savedId = shared.id;
     if (savedId !== undefined) {
@@ -425,5 +441,308 @@ export async function deleteLmsQuestion(formData: FormData): Promise<ActionResul
   } catch (error) {
     console.error('Failed to delete LMS question:', error);
     return { success: false, message: 'delete_failed' };
+  }
+}
+
+// --- Duplication & bulk import (teacher-ease wave) ---
+
+interface ModuleDupRow {
+  id: string;
+  class_slug: string;
+  title: LocalizedString;
+  sort_order: number;
+}
+
+interface LessonDupRow {
+  id: string;
+  module_id: string;
+  title: LocalizedString;
+  body: LocalizedString;
+  video_url: string | null;
+  skill: string;
+  duration_min: number | null;
+  is_free_preview: boolean;
+  sort_order: number;
+}
+
+interface QuestionDupRow {
+  id: string;
+  lesson_id: string;
+  type: string;
+  prompt: LocalizedString;
+  payload: unknown;
+  answer_key: unknown;
+  points: number;
+  sort_order: number;
+  explanation: unknown;
+  audio_path: string | null;
+  plays_allowed: number | null;
+}
+
+/** Duplicate title: Persian gets the "(کپی)" suffix, en/de stay as authored. */
+function copyTitle(title: LocalizedString): LocalizedString {
+  return { ...title, fa: `${title.fa} (کپی)` };
+}
+
+/** lesson → module → class_slug, used only for tree revalidation. */
+async function resolveClassSlug(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  lessonId: string
+): Promise<string | null> {
+  const { data: lessonRow, error: lessonError } = await supabase
+    .from('lessons')
+    .select('module_id')
+    .eq('id', lessonId)
+    .maybeSingle();
+  if (lessonError) {
+    console.error(`Failed to resolve lesson '${lessonId}' for revalidation:`, lessonError);
+    return null;
+  }
+  const moduleId = (lessonRow as { module_id?: string } | null)?.module_id;
+  if (!moduleId) return null;
+  const { data: moduleRow } = await supabase
+    .from('modules')
+    .select('class_slug')
+    .eq('id', moduleId)
+    .maybeSingle();
+  return (moduleRow as { class_slug?: string } | null)?.class_slug ?? null;
+}
+
+export async function duplicateLmsModule(formData: FormData): Promise<ActionResult> {
+  if (!(await isAdminRequest())) return { success: false, message: 'unauthorized' };
+
+  const parsed = z.object({ id: idSchema }).safeParse({ id: str(formData, 'id').trim() });
+  if (!parsed.success) {
+    console.error('duplicateLmsModule validation failed:', parsed.error.flatten());
+    return { success: false, message: 'not_found' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('modules')
+      .select('*')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+    if (error) throw error;
+    const source = data as ModuleDupRow | null;
+    if (!source) return { success: false, message: 'not_found' };
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('modules')
+      .insert({
+        class_slug: source.class_slug,
+        title: copyTitle(source.title),
+        sort_order: source.sort_order,
+      })
+      .select('id')
+      .single();
+    if (insertError) throw insertError;
+    const newId = (inserted as { id: string } | null)?.id;
+
+    revalidateClassTree(source.class_slug);
+    return { success: true, message: 'duplicated', ...(newId ? { id: newId } : {}) };
+  } catch (error) {
+    console.error('Failed to duplicate LMS module:', error);
+    return { success: false, message: 'duplicate_failed' };
+  }
+}
+
+export async function duplicateLmsLesson(formData: FormData): Promise<ActionResult> {
+  if (!(await isAdminRequest())) return { success: false, message: 'unauthorized' };
+
+  const parsed = z.object({ id: idSchema }).safeParse({ id: str(formData, 'id').trim() });
+  if (!parsed.success) {
+    console.error('duplicateLmsLesson validation failed:', parsed.error.flatten());
+    return { success: false, message: 'not_found' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('lessons')
+      .select('*')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+    if (error) throw error;
+    const source = data as LessonDupRow | null;
+    if (!source) return { success: false, message: 'not_found' };
+
+    const classSlug = await resolveClassSlug(supabase, source.id);
+    if (!classSlug) return { success: false, message: 'not_found' };
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('lessons')
+      .insert({
+        module_id: source.module_id,
+        title: copyTitle(source.title),
+        body: source.body,
+        skill: source.skill,
+        is_free_preview: source.is_free_preview,
+        sort_order: source.sort_order,
+        ...(source.video_url ? { video_url: source.video_url } : {}),
+        ...(source.duration_min != null ? { duration_min: source.duration_min } : {}),
+      })
+      .select('id')
+      .single();
+    if (insertError) throw insertError;
+    const newId = (inserted as { id: string } | null)?.id;
+
+    revalidateClassTree(classSlug);
+    return { success: true, message: 'duplicated', ...(newId ? { id: newId } : {}) };
+  } catch (error) {
+    console.error('Failed to duplicate LMS lesson:', error);
+    return { success: false, message: 'duplicate_failed' };
+  }
+}
+
+export async function duplicateLmsQuestion(formData: FormData): Promise<ActionResult> {
+  if (!(await isAdminRequest())) return { success: false, message: 'unauthorized' };
+
+  const parsed = z.object({ id: idSchema }).safeParse({ id: str(formData, 'id').trim() });
+  if (!parsed.success) {
+    console.error('duplicateLmsQuestion validation failed:', parsed.error.flatten());
+    return { success: false, message: 'not_found' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('questions')
+      .select('*')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+    if (error) throw error;
+    const source = data as QuestionDupRow | null;
+    if (!source) return { success: false, message: 'not_found' };
+
+    // questions.sort_order is an integer column, so "directly after the
+    // original" (the spec's +0.5 intent) is implemented by shifting every
+    // later sibling of the same lesson up one slot and inserting at orig+1.
+    const { data: siblings, error: siblingError } = await supabase
+      .from('questions')
+      .select('id, sort_order')
+      .eq('lesson_id', source.lesson_id)
+      .order('sort_order', { ascending: true });
+    if (siblingError) throw siblingError;
+    for (const sibling of (siblings ?? []) as { id: string; sort_order: number }[]) {
+      if (sibling.sort_order <= source.sort_order) continue;
+      const { error: shiftError } = await supabase
+        .from('questions')
+        .update({ sort_order: sibling.sort_order + 1 })
+        .eq('id', sibling.id);
+      if (shiftError) throw shiftError;
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('questions')
+      .insert({
+        lesson_id: source.lesson_id,
+        type: source.type,
+        prompt: copyTitle(source.prompt),
+        payload: source.payload,
+        answer_key: source.answer_key,
+        points: source.points,
+        sort_order: source.sort_order + 1,
+        ...(source.explanation ? { explanation: source.explanation } : {}),
+        ...(source.audio_path ? { audio_path: source.audio_path } : {}),
+        ...(source.plays_allowed != null ? { plays_allowed: source.plays_allowed } : {}),
+      })
+      .select('id')
+      .single();
+    if (insertError) throw insertError;
+    const newId = (inserted as { id: string } | null)?.id;
+
+    const classSlug = await resolveClassSlug(supabase, source.lesson_id);
+    if (classSlug) revalidateClassTree(classSlug);
+    return { success: true, message: 'duplicated', ...(newId ? { id: newId } : {}) };
+  } catch (error) {
+    console.error('Failed to duplicate LMS question:', error);
+    return { success: false, message: 'duplicate_failed' };
+  }
+}
+
+const bulkQuestionSchema = z
+  .array(
+    z.object({
+      type: z.enum(['mc', 'jnl', 'match']),
+      prompt: z.record(z.string()),
+      payload: z.record(z.unknown()),
+      answer_key: z.record(z.unknown()),
+      explanation: z.record(z.string()).optional(),
+    })
+  )
+  .min(1)
+  .max(50)
+  .refine((items) => items.every((item) => typeof item.prompt.fa === 'string' && item.prompt.fa.trim() !== ''), {
+    message: 'every prompt needs a non-empty "fa" value',
+  });
+
+export async function bulkImportQuestions(formData: FormData): Promise<ActionResult> {
+  if (!(await isAdminRequest())) return { success: false, message: 'unauthorized' };
+
+  const lessonId = str(formData, 'lessonId').trim();
+  if (!idSchema.safeParse(lessonId).success) {
+    console.error('bulkImportQuestions: invalid lessonId');
+    return { success: false, message: 'invalid_input' };
+  }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(str(formData, 'json'));
+  } catch {
+    console.error('bulkImportQuestions: json field is not valid JSON');
+    return { success: false, message: 'invalid_json' };
+  }
+
+  const parsed = bulkQuestionSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error('bulkImportQuestions validation failed:', parsed.error.flatten());
+    return { success: false, message: 'invalid_input' };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Imports append after the lesson's current last question.
+    const { data: last, error: lastError } = await supabase
+      .from('questions')
+      .select('sort_order')
+      .eq('lesson_id', lessonId)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (lastError) throw lastError;
+    const baseSort = ((last as { sort_order?: number } | null)?.sort_order ?? -1) + 1;
+
+    let insertedCount = 0;
+    for (const [index, item] of parsed.data.entries()) {
+      const { error } = await supabase.from('questions').insert({
+        lesson_id: lessonId,
+        type: item.type,
+        prompt: item.prompt,
+        payload: item.payload,
+        answer_key: item.answer_key,
+        points: 1,
+        sort_order: baseSort + index,
+        ...(item.explanation ? { explanation: item.explanation } : {}),
+      });
+      if (error) {
+        console.error(`bulkImportQuestions: failed to insert question ${index + 1}:`, error);
+        continue;
+      }
+      insertedCount++;
+    }
+    console.log(
+      `bulkImportQuestions: imported ${insertedCount}/${parsed.data.length} questions into lesson '${lessonId}'`
+    );
+
+    const classSlug = await resolveClassSlug(supabase, lessonId);
+    if (classSlug) revalidateClassTree(classSlug);
+
+    return { success: true, message: `imported:${insertedCount}` };
+  } catch (error) {
+    console.error('Failed to bulk import questions:', error);
+    return { success: false, message: 'invalid_input' };
   }
 }

@@ -66,6 +66,7 @@ interface RunnerQuestionRow {
     points: number;
     audio_path: string | null;
     plays_allowed: number | null;
+    explanation: unknown;
 }
 
 /** Row of the SECURITY DEFINER rpc get_session_review (closed sessions only). */
@@ -80,6 +81,7 @@ interface ReviewResultRow {
     given_answer: unknown;
     is_correct: boolean;
     correct_answer: unknown;
+    explanation: unknown;
 }
 
 /** Row of the SECURITY DEFINER rpc submit_section_answers. */
@@ -96,6 +98,9 @@ function mapQuestionRow(row: RunnerQuestionRow): LmsQuestion {
         ...(row.payload ? { payload: row.payload as McPayload | MatchPayload } : {}),
         ...(row.audio_path ? { audioPath: row.audio_path } : {}),
         ...(row.plays_allowed && row.plays_allowed > 0 ? { playsAllowed: row.plays_allowed } : {}),
+        // explanation is deliberately NOT mapped here: the live mock payload
+        // must never hint at the key before the session is graded. It is only
+        // attached in getSessionResults via the post-close review RPC.
         points: row.points,
     };
 }
@@ -314,7 +319,7 @@ export async function getRunnerData(
     const sectionIds = sections.map((s) => s.id);
     const { data: questionData, error: questionError } = await supabase
         .from('questions')
-        .select('id, section_id, type, prompt, payload, points, audio_path, plays_allowed')
+        .select('id, section_id, type, prompt, payload, points, audio_path, plays_allowed, explanation')
         .in('section_id', sectionIds)
         .order('sort_order');
     if (questionError || !questionData) {
@@ -481,6 +486,7 @@ export async function getSessionResults(sessionId: string): Promise<MockSessionR
             ...(row.plays_allowed && row.plays_allowed > 0
                 ? { playsAllowed: row.plays_allowed }
                 : {}),
+            ...(row.explanation ? { explanation: row.explanation as LocalizedString } : {}),
             points: 1, // review rpc omits points; each simulator item scores 1
         },
         given: castAnswer(row.type as QuestionType, row.given_answer),

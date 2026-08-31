@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, FileCheck2, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowRight, ChevronDown, Copy, FileCheck2, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import type { Language, LocalizedString } from "@/lib/types";
 import { createClient } from "@/lib/supabase/browser";
 import { useLanguage } from "@/context/language-context";
@@ -73,6 +73,8 @@ export interface QuestionNode {
   sectionId: string | null;
   type: EditorQuestionType;
   prompt: LocalizedString;
+  /** Optional trilingual answer explanation (the "why" behind the correct answer). */
+  explanation?: LocalizedString;
   points: string;
   sortOrder: string;
   data: QuestionData;
@@ -178,7 +180,12 @@ const ui = {
       invalid_input:
         "Check the fields: Persian text is required, section duration must be 1-240 minutes, match pairs must be complete.",
       delete_failed: "The server could not delete this item.",
+      not_found: "This item was not found.",
     } as Record<string, string>,
+    duplicateAria: "Duplicate question",
+    confirmDuplicate: "Create a copy?",
+    duplicatedToast: "Copy created. Click Save on the copy to persist it.",
+    explanationLabel: "Explanation (why?)",
     newMockExam: "New mock exam",
     nounExam: "Exam",
     confirmDeleteExam: "Delete this exam with all its sections and questions?",
@@ -269,7 +276,12 @@ const ui = {
       invalid_input:
         "Bitte prüfen Sie die Felder: Persischer Text ist erforderlich, die Abschnittsdauer muss 1–240 Minuten betragen, Zuordnungspaare müssen vollständig sein.",
       delete_failed: "Der Server konnte dieses Element nicht löschen.",
+      not_found: "Dieses Element wurde nicht gefunden.",
     } as Record<string, string>,
+    duplicateAria: "Frage duplizieren",
+    confirmDuplicate: "Eine Kopie erstellen?",
+    duplicatedToast: "Kopie erstellt. Klicken Sie bei der Kopie auf „Speichern“, um sie zu übernehmen.",
+    explanationLabel: "Erklärung (Warum?)",
     newMockExam: "Neuer Probetest",
     nounExam: "Probetest",
     confirmDeleteExam: "Diesen Probetest samt aller Abschnitte und Fragen löschen?",
@@ -359,7 +371,12 @@ const ui = {
       invalid_input:
         "فیلدها را بررسی کنید: متن فارسی الزامی است، مدت بخش باید ۱ تا ۲۴۰ دقیقه باشد و جفت‌های تطبیق باید کامل باشند.",
       delete_failed: "سرور نتوانست این مورد را حذف کند.",
+      not_found: "این مورد پیدا نشد.",
     } as Record<string, string>,
+    duplicateAria: "کپی کردن پرسش",
+    confirmDuplicate: "یک نسخه کپی ساخته شود؟",
+    duplicatedToast: "کپی ساخته شد. برای ثبت نهایی، روی نسخهٔ کپی «ذخیره» را بزنید.",
+    explanationLabel: "توضیح پاسخ (چرا؟)",
     newMockExam: "آزمون آزمایشی جدید",
     nounExam: "آزمون",
     confirmDeleteExam: "این آزمون همراه با همه بخش‌ها و پرسش‌هایش حذف شود؟",
@@ -1053,9 +1070,11 @@ interface QuestionCardProps {
   examId: string;
   onPatch: (patch: Partial<QuestionNode>) => void;
   onRemove: () => void;
+  /** Client-side clone (id→null) appended by the root editor; persisted via Save. */
+  onDuplicate: () => void;
 }
 
-function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps) {
+function QuestionCard({ question, examId, onPatch, onRemove, onDuplicate }: QuestionCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { language } = useLanguage();
@@ -1080,6 +1099,15 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
     fd.set("promptEn", question.prompt.en);
     fd.set("promptDe", question.prompt.de);
     fd.set("promptFa", question.prompt.fa);
+    const explanation = question.explanation;
+    if (
+      explanation &&
+      (explanation.en.trim() !== "" || explanation.de.trim() !== "" || explanation.fa.trim() !== "")
+    ) {
+      fd.set("explanationEn", explanation.en);
+      fd.set("explanationDe", explanation.de);
+      fd.set("explanationFa", explanation.fa);
+    }
     fd.set("points", question.points.trim() === "" ? "1" : question.points);
     fd.set("sortOrder", question.sortOrder.trim() === "" ? "0" : question.sortOrder);
     if (question.audioPath.trim()) fd.set("audioPath", question.audioPath.trim());
@@ -1140,6 +1168,12 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
     });
   };
 
+  const handleDuplicate = () => {
+    if (!window.confirm(t.confirmDuplicate)) return;
+    onDuplicate();
+    toast({ title: t.duplicatedToast });
+  };
+
   const promptSnippet =
     question.prompt.fa || question.prompt.en || question.prompt.de || t.newQuestion;
 
@@ -1157,6 +1191,17 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
           <Button size="sm" onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
             {t.save}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8"
+            onClick={handleDuplicate}
+            disabled={isPending}
+            title={t.duplicateAria}
+            aria-label={t.duplicateAria}
+          >
+            <Copy className="h-4 w-4" />
           </Button>
           {question.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
@@ -1207,6 +1252,14 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
           label={t.prompt}
           value={question.prompt}
           onChange={(prompt) => onPatch({ prompt })}
+          rows={2}
+        />
+
+        <LangTextareas
+          idPrefix={`question-${question.key}-explanation`}
+          label={t.explanationLabel}
+          value={question.explanation ?? emptyLocalized()}
+          onChange={(explanation) => onPatch({ explanation })}
           rows={2}
         />
 
@@ -1466,6 +1519,20 @@ export function ExamEditor({ initialExam }: { initialExam: ExamNode }) {
       ),
     }));
 
+  // Exam duplicates stay client-side (no server action is pinned for them):
+  // clone the node with id null so the teacher persists it via Save. The
+  // cloned audioPath intentionally shares the original's storage object.
+  const duplicateQuestionNode = useCallback((sectionKey: string, question: QuestionNode) => {
+    setExam((prev) => ({
+      ...prev,
+      sections: prev.sections.map((s) =>
+        s.key === sectionKey
+          ? { ...s, questions: [...s.questions, { ...question, key: nextKey("q"), id: null }] }
+          : s
+      ),
+    }));
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>
@@ -1495,6 +1562,7 @@ export function ExamEditor({ initialExam }: { initialExam: ExamNode }) {
                 examId={exam.id ?? ""}
                 onPatch={(patch) => patchQuestion(section.key, question.key, patch)}
                 onRemove={() => removeQuestion(section.key, question.key)}
+                onDuplicate={() => duplicateQuestionNode(section.key, question)}
               />
             )}
           />

@@ -4,14 +4,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel } from "@/components/ui/sidebar";
-import { LayoutDashboard, FileText, GraduationCap, Settings, UploadCloud, MessageSquare, UserCheck, ClipboardCheck, ListChecks, Layers, BookOpen, MessageCircle, CalendarDays, CreditCard } from "lucide-react";
+import { LayoutDashboard, FileText, GraduationCap, Settings, UploadCloud, MessageSquare, UserCheck, ClipboardCheck, ListChecks, Layers, BookOpen, MessageCircle, CalendarDays, CreditCard, BookOpenCheck } from "lucide-react";
 import { useLanguage } from "@/context/language-context";
 import type { Language } from "@/lib/types";
 
-const sidebarLabels: Record<Language, { management: string; content: string; teaching: string; operations: string; system: string; dashboard: string; messages: string; enrollments: string; blog: string; classes: string; lms: string; grading: string; exams: string; vocab: string; grammar: string; chat: string; sessions: string; payments: string; deploy: string; settings: string }> = {
-  en: { management: "Management", content: "Content", teaching: "Teaching", operations: "Operations", system: "System", dashboard: "Dashboard", messages: "Messages", enrollments: "Enrollments", blog: "Blog Posts", classes: "Classes", lms: "LMS Content", grading: "Grading Queue", exams: "Mock Exams", vocab: "Vocabulary", grammar: "Grammar Bank", chat: "Chat", sessions: "Sessions", payments: "Payments", deploy: "Deploy", settings: "Settings" },
-  de: { management: "Verwaltung", content: "Inhalte", teaching: "Unterricht", operations: "Organisation", system: "System", dashboard: "Dashboard", messages: "Nachrichten", enrollments: "Anmeldungen", blog: "Blogbeiträge", classes: "Kurse", lms: "LMS-Inhalte", grading: "Bewertungen", exams: "Probetests", vocab: "Wortschatz", grammar: "Grammatik", chat: "Chat", sessions: "Termine", payments: "Zahlungen", deploy: "Deployment", settings: "Einstellungen" },
-  fa: { management: "مدیریت", content: "محتوا", teaching: "آموزش", operations: "عملیات", system: "سیستم", dashboard: "داشبورد", messages: "پیام‌ها", enrollments: "ثبت‌نام‌ها", blog: "پست‌های وبلاگ", classes: "کلاس‌ها", lms: "محتوای LMS", grading: "صف تصحیح", exams: "آزمون‌های آزمایشی", vocab: "واژگان", grammar: "بانک گرامر", chat: "گفتگو", sessions: "جلسات", payments: "پرداخت‌ها", deploy: "استقرار", settings: "تنظیمات" },
+const sidebarLabels: Record<Language, { management: string; content: string; teaching: string; operations: string; system: string; dashboard: string; messages: string; enrollments: string; blog: string; classes: string; lms: string; grading: string; homework: string; exams: string; vocab: string; grammar: string; chat: string; sessions: string; payments: string; deploy: string; settings: string }> = {
+  en: { management: "Management", content: "Content", teaching: "Teaching", operations: "Operations", system: "System", dashboard: "Dashboard", messages: "Messages", enrollments: "Enrollments", blog: "Blog Posts", classes: "Classes", lms: "LMS Content", grading: "Grading Queue", homework: "Homework", exams: "Mock Exams", vocab: "Vocabulary", grammar: "Grammar Bank", chat: "Chat", sessions: "Sessions", payments: "Payments", deploy: "Deploy", settings: "Settings" },
+  de: { management: "Verwaltung", content: "Inhalte", teaching: "Unterricht", operations: "Organisation", system: "System", dashboard: "Dashboard", messages: "Nachrichten", enrollments: "Anmeldungen", blog: "Blogbeiträge", classes: "Kurse", lms: "LMS-Inhalte", grading: "Bewertungen", homework: "Hausaufgaben", exams: "Probetests", vocab: "Wortschatz", grammar: "Grammatik", chat: "Chat", sessions: "Termine", payments: "Zahlungen", deploy: "Deployment", settings: "Einstellungen" },
+  fa: { management: "مدیریت", content: "محتوا", teaching: "آموزش", operations: "عملیات", system: "سیستم", dashboard: "داشبورد", messages: "پیام‌ها", enrollments: "ثبت‌نام‌ها", blog: "پست‌های وبلاگ", classes: "کلاس‌ها", lms: "محتوای LMS", grading: "صف تصحیح", homework: "تکالیف", exams: "آزمون‌های آزمایشی", vocab: "واژگان", grammar: "بانک گرامر", chat: "گفتگو", sessions: "جلسات", payments: "پرداخت‌ها", deploy: "استقرار", settings: "تنظیمات" },
 };
 
 export function MainSidebar() {
@@ -40,6 +40,7 @@ export function MainSidebar() {
       label: t.teaching,
       items: [
         { href: "/admin/submissions", label: t.grading, icon: ClipboardCheck },
+        { href: "/admin/homework", label: t.homework, icon: BookOpenCheck },
         { href: "/admin/exams", label: t.exams, icon: ListChecks },
         { href: "/admin/vocab", label: t.vocab, icon: Layers },
         { href: "/admin/grammar", label: t.grammar, icon: BookOpen },

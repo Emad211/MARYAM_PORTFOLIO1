@@ -107,6 +107,7 @@ export async function getAdminSessions() {
     duration_min: number;
     meeting_url: string | null;
     location_note: LocalizedString | null;
+    notes: string | null;
   }>;
   return rows.map((row) => ({
     id: row.id,
@@ -116,6 +117,7 @@ export async function getAdminSessions() {
     durationMin: row.duration_min,
     ...(row.meeting_url ? { meetingUrl: row.meeting_url } : {}),
     ...(row.location_note ? { locationNote: row.location_note } : {}),
+    ...(row.notes ? { notes: row.notes } : {}),
   }));
 }
 
@@ -123,6 +125,10 @@ export async function upsertLiveSession(formData: FormData): Promise<ActionResul
   if (!(await isAdminRequest())) return { success: false, message: 'unauthorized' };
 
   const rawId = str(formData, 'id').trim();
+  if (formData.has('notes') && str(formData, 'notes').length > 5000) {
+    console.error('upsertLiveSession validation failed: notes exceeds 5000 characters');
+    return { success: false, message: 'invalid_input' };
+  }
   const startsAtIso = parseStartsAt(str(formData, 'startsAtLocal').trim());
   const meetingUrlRaw = str(formData, 'meetingUrl').trim();
   const locationNoteInput = readLocalizedOptional(formData, 'locationNote');
@@ -154,6 +160,27 @@ export async function upsertLiveSession(formData: FormData): Promise<ActionResul
 
   try {
     const supabase = await createClient();
+
+    // Scheduling conflict guard: the teacher cannot be in two sessions at
+    // once, so reject any time-range overlap with another live session
+    // (JS interval intersection over the admin-readable set, own row excluded).
+    const { data: otherSessions, error: fetchError } = await supabase
+      .from('live_sessions')
+      .select('id, starts_at, duration_min');
+    if (fetchError) throw fetchError;
+    const ownId = parsed.data.id;
+    const newStartMs = Date.parse(startsAt);
+    const newEndMs = newStartMs + durationMin * 60000;
+    const hasConflict = (
+      (otherSessions ?? []) as Array<{ id: string; starts_at: string; duration_min: number }>
+    ).some((row) => {
+      if (ownId !== undefined && row.id === ownId) return false;
+      const startMs = Date.parse(row.starts_at);
+      if (Number.isNaN(startMs)) return false;
+      return newStartMs < startMs + row.duration_min * 60000 && startMs < newEndMs;
+    });
+    if (hasConflict) return { success: false, message: 'conflict' };
+
     const row = {
       class_slug: classSlug,
       title,
@@ -161,6 +188,8 @@ export async function upsertLiveSession(formData: FormData): Promise<ActionResul
       duration_min: durationMin,
       ...(meetingUrl ? { meeting_url: meetingUrl } : {}),
       ...(locationNote ? { location_note: locationNote } : {}),
+      // Omitted key leaves a stored value untouched; blank clears it.
+      ...(formData.has('notes') ? { notes: str(formData, 'notes') || null } : {}),
     };
     let savedId = parsed.data.id;
     if (savedId !== undefined) {

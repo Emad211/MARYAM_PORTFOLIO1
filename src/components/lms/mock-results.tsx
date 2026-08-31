@@ -14,6 +14,7 @@ import {
     AlertCircle,
     CheckCircle2,
     ChevronDown,
+    Info,
     RotateCcw,
     XCircle,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ import {
 import type {
     JnlAnswer,
     Language,
+    LocalizedString,
     MatchAnswer,
     McAnswer,
     MockHistoryEntry,
@@ -43,6 +45,7 @@ const content = {
         yourAnswer: 'Your answer',
         correctAnswer: 'Correct answer',
         noAnswer: 'No answer',
+        explanationLabel: 'Explanation',
         growthHeading: 'Your progress',
         growthHint: 'Percentage score across your completed attempts.',
         retake: 'Back to exams',
@@ -66,6 +69,7 @@ const content = {
         yourAnswer: 'Ihre Antwort',
         correctAnswer: 'Richtige Antwort',
         noAnswer: 'Keine Antwort',
+        explanationLabel: 'Erklärung',
         growthHeading: 'Ihr Fortschritt',
         growthHint: 'Prozentuales Ergebnis Ihrer abgeschlossenen Versuche.',
         retake: 'Zurück zu den Prüfungen',
@@ -89,6 +93,7 @@ const content = {
         yourAnswer: 'پاسخ شما',
         correctAnswer: 'پاسخ درست',
         noAnswer: 'بدون پاسخ',
+        explanationLabel: 'توضیح',
         growthHeading: 'پیشرفت شما',
         growthHint: 'درصد نتیجه در تلاش‌های تکمیل‌شده شما.',
         retake: 'بازگشت به آزمون‌ها',
@@ -127,6 +132,35 @@ type AnswerLabels = {
 function sameAnswer(a: PlayerAnswer | null, b: PlayerAnswer | null): boolean {
     if (!a || !b) return false;
     return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/** questions.explanation is optional (teacher-ease migration) and typed on
+ *  LmsQuestion by the parallel types task — narrow structurally so this file
+ *  compiles with or without that field on the declared type. */
+function explanationFor(question: ReviewItem['question']): LocalizedString | undefined {
+    return (
+        (question as ReviewItem['question'] & { explanation?: LocalizedString })
+            .explanation ?? undefined
+    );
+}
+
+function ExplanationNote({ label, text }: { label: string; text: string }) {
+    return (
+        <div className="rounded-e-md border-s-4 border-primary/60 bg-muted p-3 text-sm">
+            <div className="flex items-start gap-2">
+                <Info
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary/70"
+                    aria-hidden="true"
+                />
+                <div className="min-w-0 space-y-0.5">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        {label}
+                    </p>
+                    <p className="whitespace-pre-line leading-relaxed">{text}</p>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 /** Resolve an answer object into human-readable text via the question payload. */
@@ -312,6 +346,9 @@ export function MockResults({
                         const isSkipped = item.given === null;
                         const isCorrect =
                             !isSkipped && sameAnswer(item.given, item.correct);
+                        const explanationText = explanationFor(item.question)?.[
+                            language
+                        ];
                         return (
                             <div key={item.question.id} className="rounded-md border">
                                 <button
@@ -365,6 +402,12 @@ export function MockResults({
                                                 {correctText ?? '—'}
                                             </span>
                                         </p>
+                                        {explanationText && (
+                                            <ExplanationNote
+                                                label={t.explanationLabel}
+                                                text={explanationText}
+                                            />
+                                        )}
                                     </div>
                                 )}
                             </div>

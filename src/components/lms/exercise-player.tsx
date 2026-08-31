@@ -7,11 +7,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle2, Info, Loader2, XCircle } from 'lucide-react';
 import { submitAnswer } from '@/app/actions/lms-actions';
 import type {
     JnlAnswer,
     LmsQuestion,
+    LocalizedString,
     MatchAnswer,
     McAnswer,
 } from '@/lib/types';
@@ -23,6 +24,7 @@ const content = {
         checkAnswers: 'Check answers',
         checking: 'Checking...',
         retry: 'Try again',
+        explanationLabel: 'Explanation',
         allCorrect: 'Perfect! All answers are correct.',
         summaryTemplate: '{correct} of {total} correct',
         jnlOptions: {
@@ -46,6 +48,7 @@ const content = {
         checkAnswers: 'Antworten prüfen',
         checking: 'Wird geprüft...',
         retry: 'Erneut versuchen',
+        explanationLabel: 'Erklärung',
         allCorrect: 'Perfekt! Alle Antworten sind richtig.',
         summaryTemplate: '{correct} von {total} richtig',
         jnlOptions: {
@@ -69,6 +72,7 @@ const content = {
         checkAnswers: 'بررسی پاسخ‌ها',
         checking: 'در حال بررسی...',
         retry: 'تلاش دوباره',
+        explanationLabel: 'توضیح',
         allCorrect: 'عالی! همه پاسخ‌ها درست است.',
         summaryTemplate: '{correct} از {total} پاسخ درست',
         jnlOptions: {
@@ -107,6 +111,35 @@ function isAnswered(
 
 function fillTemplate(template: string, values: Record<string, string>): string {
     return template.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match);
+}
+
+/** questions.explanation is optional (teacher-ease migration) and typed on
+ *  LmsQuestion by the parallel types task — narrow structurally so this file
+ *  compiles with or without that field on the declared type. */
+function explanationFor(question: LmsQuestion): LocalizedString | undefined {
+    return (
+        (question as LmsQuestion & { explanation?: LocalizedString })
+            .explanation ?? undefined
+    );
+}
+
+function ExplanationNote({ label, text }: { label: string; text: string }) {
+    return (
+        <div className="rounded-e-md border-s-4 border-primary/60 bg-muted p-3 text-sm">
+            <div className="flex items-start gap-2">
+                <Info
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary/70"
+                    aria-hidden="true"
+                />
+                <div className="min-w-0 space-y-0.5">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        {label}
+                    </p>
+                    <p className="whitespace-pre-line leading-relaxed">{text}</p>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 /** Public object URL inside the 'listening' storage bucket. */
@@ -181,6 +214,7 @@ export function ExercisePlayer({ questions }: { questions: LmsQuestion[] }) {
     };
 
     const resultForCurrent = results[index] ?? null;
+    const explanationText = explanationFor(question)?.[language];
 
     return (
         <Card>
@@ -248,6 +282,10 @@ export function ExercisePlayer({ questions }: { questions: LmsQuestion[] }) {
                             )
                         )}
                     </div>
+
+                    {checked && resultForCurrent !== null && explanationText && (
+                        <ExplanationNote label={t.explanationLabel} text={explanationText} />
+                    )}
 
                     {question.type === 'mc' && (
                         <RadioGroup

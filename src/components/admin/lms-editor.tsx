@@ -2,14 +2,18 @@
 
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, FolderOpen, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { ChevronDown, Copy, FolderOpen, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import type { Language, LocalizedString } from "@/lib/types";
 import { SKILL_LABELS } from "@/lib/label-utils";
 import { useLanguage } from "@/context/language-context";
 import {
+  bulkImportQuestions,
   deleteLmsLesson,
   deleteLmsModule,
   deleteLmsQuestion,
+  duplicateLmsLesson,
+  duplicateLmsModule,
+  duplicateLmsQuestion,
   upsertLmsLesson,
   upsertLmsModule,
   upsertLmsQuestion,
@@ -64,6 +68,8 @@ export interface EditorQuestion {
   lessonId: string | null;
   type: EditorQuestionType;
   prompt: LocalizedString;
+  /** Optional trilingual answer explanation (the "why" behind the correct answer). */
+  explanation?: LocalizedString;
   points: string;
   sortOrder: string;
   data: QuestionData;
@@ -101,6 +107,11 @@ const SKILLS: LmsSkill[] = ["lesen", "hoeren", "schreiben", "sprechen", "allgeme
 const QUESTION_TYPES: EditorQuestionType[] = ["mc", "jnl", "match"];
 const JNL_VALUES: JnlValue[] = ["ja", "nein", "nichts"];
 
+/** Placeholder shown in the bulk-import panel: one compact mc question mirroring
+ *  the payload/answer shapes documented in lms-admin-actions. */
+const IMPORT_SAMPLE =
+  '[{"type":"mc","prompt":{"fa":"پایتخت آلمان کدام است؟","de":"Was ist die Hauptstadt Deutschlands?","en":"What is the capital of Germany?"},"points":1,"correct":"a","options":[{"id":"a","text":{"fa":"برلین","de":"Berlin","en":"Berlin"}},{"id":"b","text":{"fa":"مونیخ","de":"München","en":"Munich"}}]}]';
+
 function emptyLocalized(): LocalizedString {
   return { en: "", de: "", fa: "" };
 }
@@ -128,7 +139,17 @@ const ui = {
       invalid_input:
         "Check the fields: Persian text is required, URLs must be valid, match pairs must be complete.",
       delete_failed: "The server could not delete this item.",
+      not_found: "This item was not found.",
+      invalid_json: "Invalid JSON.",
     } as Record<string, string>,
+    duplicateAria: "Duplicate",
+    confirmDuplicate: "Create a copy?",
+    duplicatedToast: "Copy created.",
+    explanationLabel: "Explanation (why?)",
+    quickImport: "Quick-import questions",
+    importAction: "Import",
+    cancelImport: "Cancel",
+    importedToast: (n: number) => `${n} questions imported.`,
     newModule: "New module",
     nounModule: "Module",
     confirmDeleteModule: "Delete this module with all its lessons and questions?",
@@ -190,7 +211,17 @@ const ui = {
       invalid_input:
         "Bitte prüfen Sie die Felder: Persischer Text ist erforderlich, URLs müssen gültig sein, Zuordnungspaare müssen vollständig sein.",
       delete_failed: "Der Server konnte dieses Element nicht löschen.",
+      not_found: "Dieses Element wurde nicht gefunden.",
+      invalid_json: "Ungültiges JSON.",
     } as Record<string, string>,
+    duplicateAria: "Duplizieren",
+    confirmDuplicate: "Eine Kopie erstellen?",
+    duplicatedToast: "Kopie erstellt.",
+    explanationLabel: "Erklärung (Warum?)",
+    quickImport: "Schnellimport von Fragen",
+    importAction: "Importieren",
+    cancelImport: "Abbrechen",
+    importedToast: (n: number) => `${n} Fragen importiert.`,
     newModule: "Neues Modul",
     nounModule: "Modul",
     confirmDeleteModule: "Dieses Modul samt aller Lektionen und Fragen löschen?",
@@ -252,7 +283,17 @@ const ui = {
       invalid_input:
         "فیلدها را بررسی کنید: متن فارسی الزامی است، نشانیها باید معتبر باشند و جفت‌های تطبیق باید کامل باشند.",
       delete_failed: "سرور نتوانست این مورد را حذف کند.",
+      not_found: "این مورد پیدا نشد.",
+      invalid_json: "JSON نامعتبر است.",
     } as Record<string, string>,
+    duplicateAria: "کپی کردن",
+    confirmDuplicate: "یک نسخه کپی ساخته شود؟",
+    duplicatedToast: "کپی ساخته شد.",
+    explanationLabel: "توضیح پاسخ (چرا؟)",
+    quickImport: "ایمپورت سریع سؤال",
+    importAction: "ایمپورت",
+    cancelImport: "انصراف",
+    importedToast: (n: number) => `${n} پرسش ایمپورت شد.`,
     newModule: "ماژول جدید",
     nounModule: "ماژول",
     confirmDeleteModule: "این ماژول همراه با همه درس‌ها و پرسش‌هایش حذف شود؟",
@@ -537,6 +578,28 @@ function ModuleCard({ moduleNode, classSlug, onPatch, onRemove, onAddLesson, ren
     });
   };
 
+  const handleDuplicate = () => {
+    if (!moduleNode.id || !window.confirm(t.confirmDuplicate)) return;
+    const fd = new FormData();
+    fd.set("id", moduleNode.id);
+
+    startTransition(() => {
+      void (async () => {
+        const result = await duplicateLmsModule(fd);
+        if (result.success) {
+          toast({ title: t.duplicatedToast });
+          router.refresh();
+        } else {
+          toast({
+            variant: "destructive",
+            title: t.actionFailed,
+            description: t.failures[result.message] ?? result.message,
+          });
+        }
+      })();
+    });
+  };
+
   return (
     <Card className="border-2">
       <CardHeader className="flex-row items-start justify-between space-y-0">
@@ -551,6 +614,19 @@ function ModuleCard({ moduleNode, classSlug, onPatch, onRemove, onAddLesson, ren
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
             {t.save}
           </Button>
+          {moduleNode.id && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={handleDuplicate}
+              disabled={isPending}
+              title={t.duplicateAria}
+              aria-label={t.duplicateAria}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
           {moduleNode.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
@@ -625,6 +701,9 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
   const t = ui[language];
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [importOpen, setImportOpen] = useState(false);
+  const [importJson, setImportJson] = useState("");
+  const [isImporting, startImport] = useTransition();
 
   const handleSave = () => {
     const fd = new FormData();
@@ -670,6 +749,54 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
     });
   };
 
+  const handleDuplicate = () => {
+    if (!lesson.id || !window.confirm(t.confirmDuplicate)) return;
+    const fd = new FormData();
+    fd.set("id", lesson.id);
+
+    startTransition(() => {
+      void (async () => {
+        const result = await duplicateLmsLesson(fd);
+        if (result.success) {
+          toast({ title: t.duplicatedToast });
+          router.refresh();
+        } else {
+          toast({
+            variant: "destructive",
+            title: t.actionFailed,
+            description: t.failures[result.message] ?? result.message,
+          });
+        }
+      })();
+    });
+  };
+
+  const handleImport = () => {
+    if (!lesson.id || importJson.trim() === "") return;
+    const fd = new FormData();
+    fd.set("lessonId", lesson.id);
+    fd.set("json", importJson);
+
+    startImport(() => {
+      void (async () => {
+        const result = await bulkImportQuestions(fd);
+        if (result.success) {
+          const count = Number(result.message.slice("imported:".length));
+          toast({ title: Number.isNaN(count) ? t.savedToast : t.importedToast(count) });
+          setImportJson("");
+          setImportOpen(false);
+          router.refresh();
+        } else {
+          toast({
+            variant: "destructive",
+            title: t.actionFailed,
+            description: t.failures[result.message] ?? result.message,
+          });
+        }
+      })();
+    });
+  };
+
   return (
     <CollapsibleSection
       open={open}
@@ -685,6 +812,19 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
             {t.save}
           </Button>
+          {lesson.id && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={handleDuplicate}
+              disabled={isPending}
+              title={t.duplicateAria}
+              aria-label={t.duplicateAria}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
           {lesson.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
@@ -766,22 +906,67 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
         </div>
 
         <div className="space-y-2 rounded-lg border border-dashed p-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="text-sm font-medium">
               {t.questionsLabel} ({lesson.questions.length})
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onAddQuestion}
-              disabled={!lesson.id}
-              title={lesson.id ? undefined : t.saveLessonFirst}
-            >
-              <Plus className="me-1 h-4 w-4" />
-              {t.addQuestion}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setImportOpen((v) => !v)}
+                disabled={!lesson.id || isImporting}
+                title={lesson.id ? undefined : t.saveLessonFirst}
+              >
+                <Upload className="me-1 h-4 w-4" />
+                {t.quickImport}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onAddQuestion}
+                disabled={!lesson.id}
+                title={lesson.id ? undefined : t.saveLessonFirst}
+              >
+                <Plus className="me-1 h-4 w-4" />
+                {t.addQuestion}
+              </Button>
+            </div>
           </div>
-          {lesson.questions.length === 0 ? (
+
+          {importOpen && (
+            <div className="space-y-2 rounded-md border bg-muted/30 p-2">
+              <Textarea
+                dir="ltr"
+                rows={8}
+                className="font-mono text-xs"
+                placeholder={IMPORT_SAMPLE}
+                value={importJson}
+                onChange={(e) => setImportJson(e.target.value)}
+                disabled={isImporting}
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setImportOpen(false)}
+                  disabled={isImporting}
+                >
+                  {t.cancelImport}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleImport}
+                  disabled={isImporting || importJson.trim() === ""}
+                >
+                  {isImporting && <Loader2 className="me-1 h-4 w-4 animate-spin" />}
+                  {t.importAction}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {lesson.questions.length === 0 && !importOpen ? (
             <p className="text-sm text-muted-foreground">{t.noQuestions}</p>
           ) : (
             <div className="space-y-2">
@@ -828,6 +1013,15 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
     fd.set("promptEn", question.prompt.en);
     fd.set("promptDe", question.prompt.de);
     fd.set("promptFa", question.prompt.fa);
+    const explanation = question.explanation;
+    if (
+      explanation &&
+      (explanation.en.trim() !== "" || explanation.de.trim() !== "" || explanation.fa.trim() !== "")
+    ) {
+      fd.set("explanationEn", explanation.en);
+      fd.set("explanationDe", explanation.de);
+      fd.set("explanationFa", explanation.fa);
+    }
     fd.set("points", question.points.trim() === "" ? "1" : question.points);
     fd.set("sortOrder", question.sortOrder.trim() === "" ? "0" : question.sortOrder);
 
@@ -886,6 +1080,28 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
     });
   };
 
+  const handleDuplicate = () => {
+    if (!question.id || !window.confirm(t.confirmDuplicate)) return;
+    const fd = new FormData();
+    fd.set("id", question.id);
+
+    startTransition(() => {
+      void (async () => {
+        const result = await duplicateLmsQuestion(fd);
+        if (result.success) {
+          toast({ title: t.duplicatedToast });
+          router.refresh();
+        } else {
+          toast({
+            variant: "destructive",
+            title: t.actionFailed,
+            description: t.failures[result.message] ?? result.message,
+          });
+        }
+      })();
+    });
+  };
+
   const promptSnippet =
     question.prompt.fa || question.prompt.en || question.prompt.de || t.newQuestion;
 
@@ -904,6 +1120,19 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
             {t.save}
           </Button>
+          {question.id && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={handleDuplicate}
+              disabled={isPending}
+              title={t.duplicateAria}
+              aria-label={t.duplicateAria}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
           {question.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
@@ -953,6 +1182,15 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
           label={t.prompt}
           value={question.prompt}
           onChange={(prompt) => onPatch({ prompt })}
+          multiline
+          rows={2}
+        />
+
+        <LangFields
+          idPrefix={`question-${question.key}-explanation`}
+          label={t.explanationLabel}
+          value={question.explanation ?? emptyLocalized()}
+          onChange={(explanation) => onPatch({ explanation })}
           multiline
           rows={2}
         />

@@ -56,6 +56,7 @@ interface ExerciseRow {
     points: number;
     audio_path: string | null;
     plays_allowed: number | null;
+    explanation: unknown;
 }
 
 function mapLessonRow(row: LessonRow): LmsLesson {
@@ -80,6 +81,7 @@ function mapExerciseRow(row: ExerciseRow): LmsQuestion {
         ...(row.payload ? { payload: row.payload as McPayload | MatchPayload } : {}),
         ...(row.audio_path ? { audioPath: row.audio_path } : {}),
         ...(row.plays_allowed && row.plays_allowed > 0 ? { playsAllowed: row.plays_allowed } : {}),
+        ...(row.explanation ? { explanation: row.explanation as LocalizedString } : {}),
         points: row.points,
     };
 }

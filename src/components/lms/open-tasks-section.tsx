@@ -47,6 +47,7 @@ const content = {
         resubmit: 'Resubmit',
         submittedPrefix: 'Submitted:',
         feedbackHeading: 'Feedback from your teacher',
+        annotationsHeading: 'Notes on your text',
         writingLabel: 'Your answer',
         writingPlaceholder: 'Write your answer here...',
         wordCount: '{n} words',
@@ -94,6 +95,7 @@ const content = {
         resubmit: 'Erneut einreichen',
         submittedPrefix: 'Abgegeben:',
         feedbackHeading: 'Feedback Ihrer Lehrkraft',
+        annotationsHeading: 'Anmerkungen zu Ihrem Text',
         writingLabel: 'Ihre Antwort',
         writingPlaceholder: 'Schreiben Sie Ihre Antwort hier...',
         wordCount: '{n} Wörter',
@@ -144,6 +146,7 @@ const content = {
         resubmit: 'ارسال دوباره',
         submittedPrefix: 'ارسال‌شده در:',
         feedbackHeading: 'بازخورد مدرس',
+        annotationsHeading: 'نکات روی متن شما',
         writingLabel: 'پاسخ شما',
         writingPlaceholder: 'پاسخ خود را اینجا بنویسید...',
         wordCount: '{n} کلمه',
@@ -240,6 +243,50 @@ function pickMimeType(): string | undefined {
     }
     if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm';
     return undefined;
+}
+
+/** submission_annotations rows embedded on SubmissionWithTask by the parallel
+ *  types task (annotations?: SubmissionAnnotation[]) — accessed structurally
+ *  so this file compiles with or without that field on the declared type. */
+interface TextAnnotation {
+    id: string;
+    submissionId: string;
+    startOffset: number;
+    endOffset: number;
+    comment: string;
+    createdAt: string;
+}
+
+type AnnotatedSegment = { text: string; annotation?: TextAnnotation };
+
+const NO_ANNOTATIONS: TextAnnotation[] = [];
+
+function annotationsFor(submission: SubmissionWithTask): TextAnnotation[] {
+    return (
+        (submission as SubmissionWithTask & { annotations?: TextAnnotation[] })
+            .annotations ?? NO_ANNOTATIONS
+    );
+}
+
+/** Split the submitted text into plain/marked segments at the annotation
+ *  offsets (input sorted by startOffset). Out-of-range or overlapping spans
+ *  are clamped/skipped so slicing can never produce jumbled text. */
+function splitByAnnotations(
+    body: string,
+    annotations: TextAnnotation[]
+): AnnotatedSegment[] {
+    const segments: AnnotatedSegment[] = [];
+    let cursor = 0;
+    for (const annotation of annotations) {
+        const start = Math.max(annotation.startOffset, cursor);
+        const end = Math.min(annotation.endOffset, body.length);
+        if (start >= end) continue;
+        if (start > cursor) segments.push({ text: body.slice(cursor, start) });
+        segments.push({ text: body.slice(start, end), annotation });
+        cursor = end;
+    }
+    if (cursor < body.length) segments.push({ text: body.slice(cursor) });
+    return segments;
 }
 
 export function OpenTasksSection({ tasks }: { tasks: OpenTask[] }) {
@@ -425,6 +472,17 @@ function SubmissionPanel({
     const { language } = useLanguage();
     const t = content[language];
 
+    const bodyText = submission.body ?? '';
+    const annotations = annotationsFor(submission);
+    const sortedAnnotations = useMemo(
+        () => [...annotations].sort((a, b) => a.startOffset - b.startOffset),
+        [annotations]
+    );
+    const segments = useMemo(
+        () => (bodyText ? splitByAnnotations(bodyText, sortedAnnotations) : []),
+        [bodyText, sortedAnnotations]
+    );
+
     if (submission.status === 'graded') {
         const rubricEntries = submission.rubricScores
             ? (Object.entries(submission.rubricScores) as [
@@ -450,6 +508,49 @@ function SubmissionPanel({
                         </Badge>
                     ))}
                 </div>
+
+                {annotations.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="text-sm font-medium">
+                            {t.annotationsHeading}
+                        </p>
+                        {/* Student writing is German — pin the excerpt LTR even
+                            when the surrounding UI is Persian/RTL. */}
+                        {bodyText && (
+                            <div
+                                dir="ltr"
+                                className="relative whitespace-pre-wrap rounded-md border bg-background p-3 text-sm leading-relaxed"
+                            >
+                                {segments.map((segment, index) =>
+                                    segment.annotation ? (
+                                        <mark
+                                            key={segment.annotation.id}
+                                            title={segment.annotation.comment}
+                                            className="rounded-sm bg-amber-400/50 text-inherit"
+                                        >
+                                            {segment.text}
+                                        </mark>
+                                    ) : (
+                                        <span key={`segment-${index}`}>
+                                            {segment.text}
+                                        </span>
+                                    )
+                                )}
+                            </div>
+                        )}
+                        <ul className="space-y-1">
+                            {sortedAnnotations.map((annotation) => (
+                                <li
+                                    key={annotation.id}
+                                    dir="auto"
+                                    className="text-sm text-muted-foreground"
+                                >
+                                    • {annotation.comment}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
 
                 {submission.teacherFeedback && (
                     <div className="space-y-1">

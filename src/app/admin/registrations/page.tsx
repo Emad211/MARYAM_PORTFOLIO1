@@ -1,6 +1,7 @@
 
 import { getEnrollmentsForAdmin } from "@/app/actions/enrollment-actions";
 import { getClasses } from "@/lib/cms-store";
+import { AdminPageHeading } from "@/components/admin/page-heading";
 import { EnrollmentsDataTable } from "@/components/admin/enrollments-data-table";
 import type { AdminEnrollment } from "@/app/actions/enrollment-actions";
 import type { Class } from "@/lib/types";
@@ -33,10 +34,14 @@ export default async function RegistrationsPage() {
     if (setupError) {
         return (
             <div className="space-y-6">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold tracking-tight">Enrollments</h1>
-                    <p className="text-muted-foreground">Review and approve student enrollment requests for your classes.</p>
-                </div>
+                <AdminPageHeading
+                    fa="ثبت‌نام‌ها"
+                    en="Enrollments"
+                    de="Anmeldungen"
+                    subFa="درخواست‌های ثبت‌نام هنرجویان را بررسی و تأیید کنید."
+                    subEn="Review and approve student enrollment requests for your classes."
+                    subDe="Prüfen und bestätigen Sie die Anmeldeanfragen Ihrer Studenten für Ihre Kurse."
+                />
                 <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-6">
                     <h2 className="font-semibold text-amber-700 dark:text-amber-400">
                         Service key required
@@ -53,10 +58,14 @@ export default async function RegistrationsPage() {
 
     return (
         <div>
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold tracking-tight">Enrollments</h1>
-                <p className="text-muted-foreground">Review and approve student enrollment requests for your classes.</p>
-            </div>
+            <AdminPageHeading
+                fa="ثبت‌نام‌ها"
+                en="Enrollments"
+                de="Anmeldungen"
+                subFa="درخواست‌های ثبت‌نام هنرجویان را بررسی و تأیید کنید."
+                subEn="Review and approve student enrollment requests for your classes."
+                subDe="Prüfen und bestätigen Sie die Anmeldeanfragen Ihrer Studenten für Ihre Kurse."
+            />
 
             <EnrollmentsDataTable data={enrollments} classes={classes} />
         </div>

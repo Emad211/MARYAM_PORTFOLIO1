@@ -88,19 +88,11 @@ export default async function AdminGrammarTopicPage({
 
   if (topicId === "new") {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">New grammar topic</h1>
-          <p className="text-muted-foreground">
-            Fill in the fields and save. The slug becomes /grammar/&lt;slug&gt;.
-          </p>
-        </div>
-        <GrammarEditor
-          topic={blankTopicNode()}
-          lessons={lessonOptions}
-          linkedLessonIds={[]}
-        />
-      </div>
+      <GrammarEditor
+        topic={blankTopicNode()}
+        lessons={lessonOptions}
+        linkedLessonIds={[]}
+      />
     );
   }
 
@@ -116,20 +108,10 @@ export default async function AdminGrammarTopicPage({
   const linkedLessonIds = ((linkRows ?? []) as LinkRow[]).map((link) => link.lesson_id);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Grammar topic · /grammar/{topicRow.slug}
-        </h1>
-        <p className="text-muted-foreground">
-          Edit the topic and pick which LMS lessons link to it.
-        </p>
-      </div>
-      <GrammarEditor
-        topic={mapTopic(topicRow)}
-        lessons={lessonOptions}
-        linkedLessonIds={linkedLessonIds}
-      />
-    </div>
+    <GrammarEditor
+      topic={mapTopic(topicRow)}
+      lessons={lessonOptions}
+      linkedLessonIds={linkedLessonIds}
+    />
   );
 }

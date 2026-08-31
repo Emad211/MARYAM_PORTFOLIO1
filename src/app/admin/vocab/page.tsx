@@ -1,18 +1,7 @@
 
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { VocabDeckCreateForm } from "@/components/admin/vocab-editor";
+import { VocabBrowser, type VocabDeckListItem } from "@/components/admin/vocab-editor";
 import type { LocalizedString } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 // Admin lists must always render live data, never a build-time snapshot.
 export const dynamic = 'force-dynamic';
@@ -65,63 +54,19 @@ export default async function AdminVocabPage() {
     supabase.from("vocab_cards").select("deck_id"),
   ]);
 
-  const decks = (deckData ?? []) as DeckRow[];
+  const rows = (deckData ?? []) as DeckRow[];
   const cards = (cardData ?? []) as CardRow[];
 
   // Grouped counts: cards per deck.
   const cardCounts = countBy(cards, (c) => c.deck_id);
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Vocabulary</h1>
-        <p className="text-muted-foreground">
-          Author the spaced-repetition decks and their flashcards.
-        </p>
-      </div>
+  const decks: VocabDeckListItem[] = rows.map((deck) => ({
+    id: deck.id,
+    title: asLocalized(deck.title),
+    domain: deck.domain as VocabDeckListItem["domain"],
+    isActive: deck.is_active,
+    cardCount: cardCounts.get(deck.id) ?? 0,
+  }));
 
-      <VocabDeckCreateForm />
-
-      {decks.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            No vocabulary decks yet. Create the first one above.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {decks.map((deck) => {
-            const title = asLocalized(deck.title);
-            return (
-              <Card key={deck.id} className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <span
-                      aria-label={deck.is_active ? "Active" : "Inactive"}
-                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                        deck.is_active ? "bg-emerald-500" : "bg-muted-foreground/40"
-                      }`}
-                    />
-                    {title.en || title.fa}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <Badge variant="outline">{deck.domain}</Badge>
-                    <span>{cardCounts.get(deck.id) ?? 0} cards</span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="mt-auto flex justify-end">
-                  <Button asChild size="sm">
-                    <Link href={`/admin/vocab/${deck.id}`}>
-                      Manage
-                      <ArrowRight className="ms-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+  return <VocabBrowser decks={decks} />;
 }

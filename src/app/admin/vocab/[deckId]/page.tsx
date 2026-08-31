@@ -113,17 +113,5 @@ export default async function AdminVocabDeckPage({
   const deck = mapDeck(deckRow);
   const cards = ((cardRows ?? []) as CardRow[]).map(mapCard);
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Vocabulary deck · {deck.title.en || deck.title.fa}
-        </h1>
-        <p className="text-muted-foreground">
-          Edit the deck header and its flashcards. Save the deck before adding cards.
-        </p>
-      </div>
-      <VocabEditor deck={deck} cards={cards} />
-    </div>
-  );
+  return <VocabEditor deck={deck} cards={cards} />;
 }

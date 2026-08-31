@@ -226,17 +226,5 @@ export default async function AdminExamPage({
     )
   );
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Mock exam · {tree.title.en || tree.title.fa}
-        </h1>
-        <p className="text-muted-foreground">
-          Sections and questions for “{tree.code}”. Save parent items before adding children.
-        </p>
-      </div>
-      <ExamEditor initialExam={tree} />
-    </div>
-  );
+  return <ExamEditor initialExam={tree} />;
 }

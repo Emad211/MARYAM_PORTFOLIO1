@@ -33,8 +33,6 @@ import type { Language } from "@/lib/types";
 type Message = Awaited<ReturnType<typeof getContactMessages>>[0];
 
 const messagesTableContent: Record<Language, {
-  pageTitle: string;
-  pageDescription: string;
   sender: string;
   subjectMessage: string;
   date: string;
@@ -46,8 +44,6 @@ const messagesTableContent: Record<Language, {
   error: string;
 }> = {
   en: {
-    pageTitle: "Contact Messages",
-    pageDescription: "Here you can view and delete messages submitted through the contact form.",
     sender: "Sender",
     subjectMessage: "Subject & Message",
     date: "Date",
@@ -59,8 +55,6 @@ const messagesTableContent: Record<Language, {
     error: "Error",
   },
   de: {
-    pageTitle: "Kontaktnachrichten",
-    pageDescription: "Hier können Sie über das Kontaktformular eingegangene Nachrichten ansehen und löschen.",
     sender: "Absender",
     subjectMessage: "Betreff & Nachricht",
     date: "Datum",
@@ -72,8 +66,6 @@ const messagesTableContent: Record<Language, {
     error: "Fehler",
   },
   fa: {
-    pageTitle: "پیام‌های تماس",
-    pageDescription: "در اینجا می‌توانید پیام‌های ارسال‌شده از طریق فرم تماس را مشاهده و حذف کنید.",
     sender: "فرستنده",
     subjectMessage: "موضوع و پیام",
     date: "تاریخ",
@@ -113,10 +105,6 @@ export function MessagesDataTable({ data }: MessagesDataTableProps) {
 
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">{t.pageTitle}</h1>
-        <p className="text-muted-foreground">{t.pageDescription}</p>
-      </div>
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -142,7 +130,7 @@ export function MessagesDataTable({ data }: MessagesDataTableProps) {
                       className="w-full text-start rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <p className="font-medium hover:text-primary">{message.subject}</p>
-                      <p className="text-sm text-muted-foreground truncate max-w-md">{message.message}</p>
+                      <p className="text-sm text-muted-foreground truncate max-w-xl">{message.message}</p>
                       <span className="sr-only">{t.actions}</span>
                     </button>
                   </TableCell>

@@ -6,7 +6,14 @@ import { ArrowLeft } from 'lucide-react';
 import { getThreadWithUser, sendAdminMessage } from '@/app/actions/messages-actions';
 import { ChatThread } from '@/components/dashboard/chat-thread';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLanguage } from '@/context/language-context';
 import type { ChatMessage } from '@/lib/types';
+
+const content = {
+    en: { back: 'Back to inbox' },
+    de: { back: 'Zurück zum Posteingang' },
+    fa: { back: 'بازگشت به صندوق' },
+} as const;
 
 /**
  * Teacher side of a conversation with one student.
@@ -21,6 +28,7 @@ export function AdminChat({
     counterpartId: string;
     counterpartName: string;
 }) {
+    const { language } = useLanguage();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loaded, setLoaded] = useState(false);
 
@@ -55,7 +63,7 @@ export function AdminChat({
                 className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
             >
                 <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
-                Inbox
+                {content[language].back}
             </Link>
             <ChatThread
                 messages={messages}

@@ -2,21 +2,20 @@
 
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ChevronDown, Layers, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import type { Language, LocalizedString } from "@/lib/types";
-import {
-  deleteVocabCard,
-  deleteVocabDeck,
-  upsertVocabCard,
-  upsertVocabDeck,
-  type ActionResult,
-} from "@/app/actions/vocab-admin-actions";
-
+import { useLanguage } from "@/context/language-context";
+import { EmptyState } from "@/components/admin/empty-state";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -25,6 +24,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import {
+  deleteVocabCard,
+  deleteVocabDeck,
+  upsertVocabCard,
+  upsertVocabDeck,
+  type ActionResult,
+} from "@/app/actions/vocab-admin-actions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 // --- Editor-side tree types (mapped from DB rows by the server page) ---
 
@@ -74,51 +83,242 @@ const DOMAINS: VocabDomain[] = [
   "medien",
   "gesellschaft",
 ];
-const DOMAIN_LABEL: Record<VocabDomain, string> = {
-  alltag: "Alltag (Everyday)",
-  studium: "Studium (Studies)",
-  umwelt: "Umwelt (Environment)",
-  arbeit_wirtschaft: "Arbeit & Wirtschaft",
-  medien: "Medien (Media)",
-  gesellschaft: "Gesellschaft (Society)",
-};
 const WORD_TYPES: CardWordType[] = ["noun", "verb", "adjective", "phrase", "other"];
-const WORD_TYPE_LABEL: Record<CardWordType, string> = {
-  noun: "Noun",
-  verb: "Verb",
-  adjective: "Adjective",
-  phrase: "Phrase",
-  other: "Other",
-};
 
-function emptyLocalized(): LocalizedString {
-  return { en: "", de: "", fa: "" };
-}
+// --- Trilingual UI strings (Persian-first, German in Sie-form) ---
 
-// --- Result toast mapping ---
+const ui = {
+  en: {
+    browserTitle: "Vocabulary",
+    browserSubtitle: "Author the spaced-repetition decks and their flashcards.",
+    manage: "Manage",
+    activeAria: "Active",
+    inactiveAria: "Inactive",
+    cardsCount: (n: number) => `${n} cards`,
+    empty: "No vocabulary decks yet",
+    emptySub: "Create the first one with the form above.",
+    heading: "Vocabulary deck",
+    subtitle: "Edit the deck header and its flashcards. Save the deck before adding cards.",
+    save: "Save",
+    delete: "Delete",
+    remove: "Remove",
+    unsaved: "unsaved",
+    savedToast: "Saved.",
+    deletedToast: "deleted.",
+    actionFailed: "Action failed",
+    failures: {
+      unauthorized: "Your session is not authorized for this change.",
+      invalid_input:
+        "Check the fields: Persian text is required and the German front must be 1–200 characters.",
+      save_failed: "The server could not save this item (check that the class slug exists).",
+      delete_failed: "The server could not delete this item.",
+    } as Record<string, string>,
+    newDeck: "New deck",
+    nounDeck: "Deck",
+    confirmDeleteDeck: "Delete this deck with all its cards?",
+    title: "Title",
+    description: "Description (optional)",
+    domain: "Domain",
+    domainLabels: {
+      alltag: "Alltag (Everyday)",
+      studium: "Studium (Studies)",
+      umwelt: "Umwelt (Environment)",
+      arbeit_wirtschaft: "Arbeit & Wirtschaft (Work & Economy)",
+      medien: "Medien (Media)",
+      gesellschaft: "Gesellschaft (Society)",
+    } as Record<VocabDomain, string>,
+    classSlugLabel: "Class slug (optional link)",
+    active: "Active",
+    cardsLabel: "Cards",
+    addCard: "Add card",
+    saveDeckFirst: "Save the deck first",
+    noCards: "No cards yet.",
+    newCard: "New card",
+    noHint: "no hint",
+    nounCard: "Card",
+    confirmDeleteCard: "Delete this card?",
+    saveCard: "Save card",
+    frontDe: "Front (German, 1–200 chars)",
+    wordType: "Word type",
+    wordTypeLabels: {
+      noun: "Noun",
+      verb: "Verb",
+      adjective: "Adjective",
+      phrase: "Phrase",
+      other: "Other",
+    } as Record<CardWordType, string>,
+    sortOrder: "Sort order",
+    hint: "Hint (optional)",
+    exampleDe: "Example DE (optional)",
+    exampleEn: "Example EN (optional)",
+    exampleFa: "Example FA (optional)",
+    newDeckForm: "New vocabulary deck",
+    createDeck: "Create deck",
+  },
+  de: {
+    browserTitle: "Wortschatz",
+    browserSubtitle: "Erstellen Sie die Decks für verteiltes Wiederholen und deren Karten.",
+    manage: "Verwalten",
+    activeAria: "Aktiv",
+    inactiveAria: "Inaktiv",
+    cardsCount: (n: number) => `${n} Karten`,
+    empty: "Noch keine Wortschatz-Decks",
+    emptySub: "Legen Sie das erste mit dem Formular oben an.",
+    heading: "Wortschatz-Deck",
+    subtitle:
+      "Bearbeiten Sie den Deck-Kopf und seine Karten. Speichern Sie das Deck, bevor Sie Karten hinzufügen.",
+    save: "Speichern",
+    delete: "Löschen",
+    remove: "Entfernen",
+    unsaved: "ungespeichert",
+    savedToast: "Gespeichert.",
+    deletedToast: "gelöscht.",
+    actionFailed: "Aktion fehlgeschlagen",
+    failures: {
+      unauthorized: "Ihre Sitzung ist für diese Änderung nicht berechtigt.",
+      invalid_input:
+        "Bitte prüfen Sie die Felder: Persischer Text ist erforderlich und die deutsche Vorderseite muss 1–200 Zeichen lang sein.",
+      save_failed:
+        "Der Server konnte dieses Element nicht speichern (prüfen Sie, ob der Kurs-Slug existiert).",
+      delete_failed: "Der Server konnte dieses Element nicht löschen.",
+    } as Record<string, string>,
+    newDeck: "Neues Deck",
+    nounDeck: "Deck",
+    confirmDeleteDeck: "Dieses Deck samt aller Karten löschen?",
+    title: "Titel",
+    description: "Beschreibung (optional)",
+    domain: "Bereich",
+    domainLabels: {
+      alltag: "Alltag",
+      studium: "Studium",
+      umwelt: "Umwelt",
+      arbeit_wirtschaft: "Arbeit & Wirtschaft",
+      medien: "Medien",
+      gesellschaft: "Gesellschaft",
+    } as Record<VocabDomain, string>,
+    classSlugLabel: "Kurs-Slug (optionale Verknüpfung)",
+    active: "Aktiv",
+    cardsLabel: "Karten",
+    addCard: "Karte hinzufügen",
+    saveDeckFirst: "Speichern Sie zuerst das Deck",
+    noCards: "Noch keine Karten.",
+    newCard: "Neue Karte",
+    noHint: "kein Hinweis",
+    nounCard: "Karte",
+    confirmDeleteCard: "Diese Karte löschen?",
+    saveCard: "Karte speichern",
+    frontDe: "Vorderseite (Deutsch, 1–200 Zeichen)",
+    wordType: "Wortart",
+    wordTypeLabels: {
+      noun: "Substantiv",
+      verb: "Verb",
+      adjective: "Adjektiv",
+      phrase: "Redewendung",
+      other: "Sonstige",
+    } as Record<CardWordType, string>,
+    sortOrder: "Reihenfolge",
+    hint: "Hinweis (optional)",
+    exampleDe: "Beispiel DE (optional)",
+    exampleEn: "Beispiel EN (optional)",
+    exampleFa: "Beispiel FA (optional)",
+    newDeckForm: "Neues Wortschatz-Deck",
+    createDeck: "Deck anlegen",
+  },
+  fa: {
+    browserTitle: "واژگان",
+    browserSubtitle: "طراحی دسته‌های مرور با فاصله و کارت‌های واژهٔ آنها.",
+    manage: "مدیریت",
+    activeAria: "فعال",
+    inactiveAria: "غیرفعال",
+    cardsCount: (n: number) => `${n} کارت`,
+    empty: "هنوز دسته واژگانی ساخته نشده است",
+    emptySub: "اولین دسته را با فرم بالا بسازید.",
+    heading: "دسته واژگان",
+    subtitle: "عنوان دسته و کارت‌های آن را ویرایش کنید. پیش از افزودن کارت، ابتدا دسته را ذخیره کنید.",
+    save: "ذخیره",
+    delete: "حذف",
+    remove: "حذف",
+    unsaved: "ذخیره‌نشده",
+    savedToast: "ذخیره شد.",
+    deletedToast: "حذف شد.",
+    actionFailed: "انجام عملیات ناموفق بود",
+    failures: {
+      unauthorized: "اجازهٔ انجام این تغییر را ندارید.",
+      invalid_input:
+        "فیلدها را بررسی کنید: متن فارسی الزامی است و واژهٔ آلمانی باید ۱ تا ۲۰۰ نویسه باشد.",
+      save_failed: "سرور نتوانست این مورد را ذخیره کند (وجود شناسهٔ کلاس را بررسی کنید).",
+      delete_failed: "سرور نتوانست این مورد را حذف کند.",
+    } as Record<string, string>,
+    newDeck: "دسته جدید",
+    nounDeck: "دسته",
+    confirmDeleteDeck: "این دسته همراه با همه کارت‌هایش حذف شود؟",
+    title: "عنوان",
+    description: "توضیحات (اختیاری)",
+    domain: "حوزه",
+    domainLabels: {
+      alltag: "Alltag (زندگی روزمره)",
+      studium: "Studium (تحصیل)",
+      umwelt: "Umwelt (محیط زیست)",
+      arbeit_wirtschaft: "Arbeit & Wirtschaft (کار و اقتصاد)",
+      medien: "Medien (رسانه)",
+      gesellschaft: "Gesellschaft (جامعه)",
+    } as Record<VocabDomain, string>,
+    classSlugLabel: "کلاس مرتبط (اختیاری)",
+    active: "فعال",
+    cardsLabel: "کارت‌ها",
+    addCard: "افزودن کارت",
+    saveDeckFirst: "ابتدا دسته را ذخیره کنید",
+    noCards: "هنوز کارتی افزوده نشده است.",
+    newCard: "کارت جدید",
+    noHint: "بدون راهنما",
+    nounCard: "کارت",
+    confirmDeleteCard: "این کارت حذف شود؟",
+    saveCard: "ذخیره کارت",
+    frontDe: "واژه آلمانی (۱ تا ۲۰۰ نویسه)",
+    wordType: "نوع واژه",
+    wordTypeLabels: {
+      noun: "اسم",
+      verb: "فعل",
+      adjective: "صفت",
+      phrase: "عبارت",
+      other: "سایر",
+    } as Record<CardWordType, string>,
+    sortOrder: "ترتیب",
+    hint: "راهنما (اختیاری)",
+    exampleDe: "مثال آلمانی (اختیاری)",
+    exampleEn: "مثال انگلیسی (اختیاری)",
+    exampleFa: "مثال فارسی (اختیاری)",
+    newDeckForm: "دسته واژگان جدید",
+    createDeck: "ایجاد دسته",
+  },
+} as const;
 
-const FAILURE_DESCRIPTIONS: Record<string, string> = {
-  unauthorized: "Your session is not authorized for this change.",
-  invalid_input:
-    "Check the fields: Persian text is required and the German front must be 1–200 characters.",
-  save_failed: "The server could not save this item (check that the class slug exists).",
-  delete_failed: "The server could not delete this item.",
-};
+type UiContent = (typeof ui)[keyof typeof ui];
 
 function reportResult(
   toast: ReturnType<typeof useToast>["toast"],
   result: ActionResult,
+  t: UiContent,
   deletedNoun?: string
 ): void {
   if (result.success) {
-    toast({ title: result.message === "deleted" ? `${deletedNoun ?? "Item"} deleted.` : "Saved." });
+    toast({
+      title:
+        result.message === "deleted"
+          ? `${deletedNoun ?? ""} ${t.deletedToast}`.trim()
+          : t.savedToast,
+    });
     return;
   }
   toast({
     variant: "destructive",
-    title: "Action failed",
-    description: FAILURE_DESCRIPTIONS[result.message] ?? result.message,
+    title: t.actionFailed,
+    description: t.failures[result.message] ?? result.message,
   });
+}
+
+function emptyLocalized(): LocalizedString {
+  return { en: "", de: "", fa: "" };
 }
 
 // --- Small field atoms (copied verbatim-style from exam-editor) ---
@@ -214,9 +414,10 @@ function CollapsibleSection({
 }
 
 function WordTypeChip({ wordType }: { wordType: CardWordType }) {
+  const { language } = useLanguage();
   return (
     <span className="ms-2 inline-flex shrink-0 items-center rounded-full bg-muted px-2 py-0.5 align-middle text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-      {WORD_TYPE_LABEL[wordType]}
+      {ui[language].wordTypeLabels[wordType]}
     </span>
   );
 }
@@ -254,6 +455,8 @@ interface DeckCardProps {
 function DeckCard({ deckNode, onPatch }: DeckCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [isPending, startTransition] = useTransition();
 
   const handleSave = () => {
@@ -272,7 +475,7 @@ function DeckCard({ deckNode, onPatch }: DeckCardProps) {
     startTransition(() => {
       void (async () => {
         const result = await upsertVocabDeck(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           if (result.id && !deckNode.id) onPatch({ id: result.id });
           router.refresh();
@@ -282,14 +485,14 @@ function DeckCard({ deckNode, onPatch }: DeckCardProps) {
   };
 
   const handleDelete = () => {
-    if (!deckNode.id || !window.confirm("Delete this deck with all its cards?")) return;
+    if (!deckNode.id || !window.confirm(t.confirmDeleteDeck)) return;
     const fd = new FormData();
     fd.set("id", deckNode.id);
 
     startTransition(() => {
       void (async () => {
         const result = await deleteVocabDeck(fd);
-        reportResult(toast, result, "Deck");
+        reportResult(toast, result, t, t.nounDeck);
         if (result.success) router.push("/admin/vocab");
       })();
     });
@@ -299,20 +502,20 @@ function DeckCard({ deckNode, onPatch }: DeckCardProps) {
     <Card className="border-2">
       <CardHeader className="flex-row items-start justify-between space-y-0">
         <CardTitle className="text-base">
-          {deckNode.title.fa || deckNode.title.en || "New deck"}
+          {deckNode.title.fa || deckNode.title.en || t.newDeck}
           {!deckNode.id && (
-            <span className="ms-2 align-middle text-xs font-normal text-muted-foreground">unsaved</span>
+            <span className="ms-2 align-middle text-xs font-normal text-muted-foreground">{t.unsaved}</span>
           )}
         </CardTitle>
         <div className="flex gap-2">
           <Button size="sm" onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Save
+            {t.save}
           </Button>
           {deckNode.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
-              Delete
+              {t.delete}
             </Button>
           ) : null}
         </div>
@@ -320,20 +523,20 @@ function DeckCard({ deckNode, onPatch }: DeckCardProps) {
       <CardContent className="space-y-4">
         <LangInputs
           idPrefix={`deck-${deckNode.key}-title`}
-          label="Title"
+          label={t.title}
           value={deckNode.title}
           onChange={(title) => onPatch({ title })}
         />
         <LangInputs
           idPrefix={`deck-${deckNode.key}-description`}
-          label="Description (optional)"
+          label={t.description}
           value={deckNode.description}
           onChange={(description) => onPatch({ description })}
         />
 
         <div className="grid gap-4 sm:grid-cols-[260px_1fr_auto] sm:items-end">
           <div className="space-y-1">
-            <Label htmlFor={`deck-${deckNode.key}-domain`}>Domain</Label>
+            <Label htmlFor={`deck-${deckNode.key}-domain`}>{t.domain}</Label>
             <Select
               value={deckNode.domain}
               onValueChange={(domain) => onPatch({ domain: domain as VocabDomain })}
@@ -344,14 +547,14 @@ function DeckCard({ deckNode, onPatch }: DeckCardProps) {
               <SelectContent>
                 {DOMAINS.map((domain) => (
                   <SelectItem key={domain} value={domain}>
-                    {DOMAIN_LABEL[domain]}
+                    {t.domainLabels[domain]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label htmlFor={`deck-${deckNode.key}-class`}>Class slug (optional link)</Label>
+            <Label htmlFor={`deck-${deckNode.key}-class`}>{t.classSlugLabel}</Label>
             <Input
               id={`deck-${deckNode.key}-class`}
               placeholder="e.g. b1-intensiv"
@@ -365,7 +568,7 @@ function DeckCard({ deckNode, onPatch }: DeckCardProps) {
               checked={deckNode.isActive}
               onCheckedChange={(checked) => onPatch({ isActive: checked === true })}
             />
-            <Label htmlFor={`deck-${deckNode.key}-active`}>Active</Label>
+            <Label htmlFor={`deck-${deckNode.key}-active`}>{t.active}</Label>
           </div>
         </div>
       </CardContent>
@@ -384,6 +587,8 @@ interface CardRowProps {
 function CardRow({ card, onPatch, onRemove }: CardRowProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -404,7 +609,7 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
     startTransition(() => {
       void (async () => {
         const result = await upsertVocabCard(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           if (result.id && !card.id) onPatch({ id: result.id });
           router.refresh();
@@ -414,14 +619,14 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
   };
 
   const handleDelete = () => {
-    if (!card.id || !window.confirm("Delete this card?")) return;
+    if (!card.id || !window.confirm(t.confirmDeleteCard)) return;
     const fd = new FormData();
     fd.set("id", card.id);
 
     startTransition(() => {
       void (async () => {
         const result = await deleteVocabCard(fd);
-        reportResult(toast, result, "Card");
+        reportResult(toast, result, t, t.nounCard);
         if (result.success) router.refresh();
       })();
     });
@@ -433,33 +638,33 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
       onToggle={() => setOpen((v) => !v)}
       title={
         <>
-          {card.frontDe || "New card"}
+          {card.frontDe || t.newCard}
           <WordTypeChip wordType={card.wordType} />
         </>
       }
-      subtitle={`${card.hint.fa || card.hint.en || "no hint"}${!card.id ? " · unsaved" : ""}`}
+      subtitle={`${card.hint.fa || card.hint.en || t.noHint}${!card.id ? ` · ${t.unsaved}` : ""}`}
     >
       <div className="space-y-4">
         <div className="flex flex-wrap justify-end gap-2">
           <Button size="sm" onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Save card
+            {t.saveCard}
           </Button>
           {card.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
-              Delete card
+              {t.delete}
             </Button>
           ) : (
             <Button size="sm" variant="outline" onClick={onRemove} disabled={isPending}>
-              Remove
+              {t.remove}
             </Button>
           )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-[1fr_220px_140px] sm:items-end">
           <div className="space-y-1">
-            <Label htmlFor={`card-${card.key}-front`}>Front (German, 1–200 chars)</Label>
+            <Label htmlFor={`card-${card.key}-front`}>{t.frontDe}</Label>
             <Input
               id={`card-${card.key}-front`}
               lang="de"
@@ -469,7 +674,7 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor={`card-${card.key}-type`}>Word type</Label>
+            <Label htmlFor={`card-${card.key}-type`}>{t.wordType}</Label>
             <Select
               value={card.wordType}
               onValueChange={(wordType) => onPatch({ wordType: wordType as CardWordType })}
@@ -480,7 +685,7 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
               <SelectContent>
                 {WORD_TYPES.map((wordType) => (
                   <SelectItem key={wordType} value={wordType}>
-                    {WORD_TYPE_LABEL[wordType]}
+                    {t.wordTypeLabels[wordType]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -488,7 +693,7 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
           </div>
           <NumberField
             id={`card-${card.key}-sort`}
-            label="Sort order"
+            label={t.sortOrder}
             value={card.sortOrder}
             onChange={(sortOrder) => onPatch({ sortOrder })}
             min={0}
@@ -497,7 +702,7 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
 
         <LangInputs
           idPrefix={`card-${card.key}-hint`}
-          label="Hint (optional)"
+          label={t.hint}
           value={card.hint}
           onChange={(hint) => onPatch({ hint })}
         />
@@ -505,7 +710,7 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1">
             <Label htmlFor={`card-${card.key}-exde`} className="text-xs text-muted-foreground">
-              Example DE (optional)
+              {t.exampleDe}
             </Label>
             <Input
               id={`card-${card.key}-exde`}
@@ -516,7 +721,7 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
           </div>
           <div className="space-y-1">
             <Label htmlFor={`card-${card.key}-exen`} className="text-xs text-muted-foreground">
-              Example EN (optional)
+              {t.exampleEn}
             </Label>
             <Input
               id={`card-${card.key}-exen`}
@@ -526,7 +731,7 @@ function CardRow({ card, onPatch, onRemove }: CardRowProps) {
           </div>
           <div className="space-y-1">
             <Label htmlFor={`card-${card.key}-exfa`} className="text-xs text-muted-foreground">
-              Example FA (optional)
+              {t.exampleFa}
             </Label>
             <Input
               id={`card-${card.key}-exfa`}
@@ -550,8 +755,12 @@ export function VocabEditor({
   deck: DeckNode;
   cards: CardNode[];
 }) {
+  const { language } = useLanguage();
+  const t = ui[language];
   const [deck, setDeck] = useState<DeckNode>(initialDeck);
   const [cards, setCards] = useState<CardNode[]>(initialCards);
+
+  const displayTitle = deck.title[language] || deck.title.fa || deck.title.en;
 
   const patchDeck = useCallback((patch: Partial<DeckNode>) => {
     setDeck((prev) => ({ ...prev, ...patch }));
@@ -566,24 +775,33 @@ export function VocabEditor({
 
   return (
     <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t.heading} · {displayTitle}
+        </h1>
+        <p className="text-muted-foreground">{t.subtitle}</p>
+      </div>
+
       <DeckCard deckNode={deck} onPatch={patchDeck} />
 
       <div className="space-y-2 rounded-lg border border-dashed p-3">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-medium">Cards ({cards.length})</div>
+          <div className="text-sm font-medium">
+            {t.cardsLabel} ({cards.length})
+          </div>
           <Button
             size="sm"
             variant="outline"
             onClick={addCard}
             disabled={!deck.id}
-            title={deck.id ? undefined : "Save the deck first"}
+            title={deck.id ? undefined : t.saveDeckFirst}
           >
             <Plus className="me-1 h-4 w-4" />
-            Add card
+            {t.addCard}
           </Button>
         </div>
         {cards.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No cards yet.</p>
+          <p className="text-sm text-muted-foreground">{t.noCards}</p>
         ) : (
           <div className="space-y-2">
             {cards.map((card) => (
@@ -606,6 +824,8 @@ export function VocabEditor({
 export function VocabDeckCreateForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [title, setTitle] = useState<LocalizedString>(emptyLocalized());
   const [description, setDescription] = useState<LocalizedString>(emptyLocalized());
   const [domain, setDomain] = useState<VocabDomain>("alltag");
@@ -628,7 +848,7 @@ export function VocabDeckCreateForm() {
     startTransition(() => {
       void (async () => {
         const result = await upsertVocabDeck(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           setTitle(emptyLocalized());
           setDescription(emptyLocalized());
@@ -644,20 +864,20 @@ export function VocabDeckCreateForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">New vocabulary deck</CardTitle>
+        <CardTitle className="text-base">{t.newDeckForm}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <LangInputs idPrefix="new-deck-title" label="Title" value={title} onChange={setTitle} />
+        <LangInputs idPrefix="new-deck-title" label={t.title} value={title} onChange={setTitle} />
         <LangInputs
           idPrefix="new-deck-description"
-          label="Description (optional)"
+          label={t.description}
           value={description}
           onChange={setDescription}
         />
 
         <div className="grid gap-4 sm:grid-cols-[260px_1fr_auto] sm:items-end">
           <div className="space-y-1">
-            <Label htmlFor="new-deck-domain">Domain</Label>
+            <Label htmlFor="new-deck-domain">{t.domain}</Label>
             <Select value={domain} onValueChange={(value) => setDomain(value as VocabDomain)}>
               <SelectTrigger id="new-deck-domain">
                 <SelectValue />
@@ -665,14 +885,14 @@ export function VocabDeckCreateForm() {
               <SelectContent>
                 {DOMAINS.map((domainOption) => (
                   <SelectItem key={domainOption} value={domainOption}>
-                    {DOMAIN_LABEL[domainOption]}
+                    {t.domainLabels[domainOption]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="new-deck-class">Class slug (optional link)</Label>
+            <Label htmlFor="new-deck-class">{t.classSlugLabel}</Label>
             <Input
               id="new-deck-class"
               placeholder="e.g. b1-intensiv"
@@ -686,17 +906,88 @@ export function VocabDeckCreateForm() {
               checked={isActive}
               onCheckedChange={(checked) => setIsActive(checked === true)}
             />
-            <Label htmlFor="new-deck-active">Active</Label>
+            <Label htmlFor="new-deck-active">{t.active}</Label>
           </div>
         </div>
 
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Create deck
+            {t.createDeck}
           </Button>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// --- Vocab list page body (heading + create form + grid) ---
+
+export interface VocabDeckListItem {
+  id: string;
+  title: LocalizedString;
+  domain: VocabDomain;
+  isActive: boolean;
+  cardCount: number;
+}
+
+export function VocabBrowser({ decks }: { decks: VocabDeckListItem[] }) {
+  const { language } = useLanguage();
+  const t = ui[language];
+
+  const titleFor = (deck: VocabDeckListItem) =>
+    deck.title[language] || deck.title.fa || deck.title.en;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{t.browserTitle}</h1>
+        <p className="text-muted-foreground">{t.browserSubtitle}</p>
+      </div>
+
+      <VocabDeckCreateForm />
+
+      {decks.length === 0 ? (
+        <EmptyState
+          icon={Layers}
+          en={ui.en.empty}
+          de={ui.de.empty}
+          fa={ui.fa.empty}
+          subEn={ui.en.emptySub}
+          subDe={ui.de.emptySub}
+          subFa={ui.fa.emptySub}
+        />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {decks.map((deck) => (
+            <Card key={deck.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <span
+                    aria-label={deck.isActive ? t.activeAria : t.inactiveAria}
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                      deck.isActive ? "bg-emerald-500" : "bg-muted-foreground/40"
+                    }`}
+                  />
+                  {titleFor(deck)}
+                </CardTitle>
+                <CardDescription className="flex items-center gap-2">
+                  <Badge variant="outline">{t.domainLabels[deck.domain]}</Badge>
+                  <span>{t.cardsCount(deck.cardCount)}</span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto flex justify-end">
+                <Button asChild size="sm">
+                  <Link href={`/admin/vocab/${deck.id}`}>
+                    {t.manage}
+                    <ArrowRight className="ms-2 h-4 w-4 rtl:rotate-180" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

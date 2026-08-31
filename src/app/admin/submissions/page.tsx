@@ -137,17 +137,5 @@ export default async function SubmissionsPage() {
         };
     });
 
-    return (
-        <div>
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold tracking-tight">Grading Queue</h1>
-                <p className="text-muted-foreground">
-                    Review student Schreiben/Sprechen submissions and grade them with the official
-                    three-criterion rubric.
-                </p>
-            </div>
-
-            <GradingQueue items={items} />
-        </div>
-    );
+    return <GradingQueue items={items} />;
 }

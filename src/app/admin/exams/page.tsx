@@ -1,18 +1,7 @@
 
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { ExamCreateForm } from "@/components/admin/exam-editor";
+import { ExamBrowser, type ExamListItem } from "@/components/admin/exam-editor";
 import type { LocalizedString } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 // Admin lists must always render live data, never a build-time snapshot.
 export const dynamic = 'force-dynamic';
@@ -67,7 +56,7 @@ export default async function AdminExamsPage() {
     supabase.from("questions").select("section_id").not("section_id", "is", null),
   ]);
 
-  const exams = (examData ?? []) as ExamRow[];
+  const rows = (examData ?? []) as ExamRow[];
   const sections = (sectionData ?? []) as SectionRow[];
   const questions = (questionData ?? []) as QuestionRow[];
 
@@ -83,60 +72,14 @@ export default async function AdminExamsPage() {
     (examId) => examId
   );
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Mock Exams</h1>
-        <p className="text-muted-foreground">
-          Author the TestDaF simulator blueprints (Lesen / Hören sections and their questions).
-        </p>
-      </div>
+  const exams: ExamListItem[] = rows.map((exam) => ({
+    id: exam.id,
+    code: exam.code,
+    title: asLocalized(exam.title),
+    isActive: exam.is_active,
+    sectionCount: sectionCounts.get(exam.id) ?? 0,
+    questionCount: questionCounts.get(exam.id) ?? 0,
+  }));
 
-      <ExamCreateForm />
-
-      {exams.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            No mock exams yet. Create the first one above.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {exams.map((exam) => {
-            const title = asLocalized(exam.title);
-            return (
-              <Card key={exam.id} className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <span
-                      aria-label={exam.is_active ? "Active" : "Inactive"}
-                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                        exam.is_active ? "bg-emerald-500" : "bg-muted-foreground/40"
-                      }`}
-                    />
-                    {title.en || title.fa}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <Badge variant="outline">{exam.code}</Badge>
-                    <span>
-                      {sectionCounts.get(exam.id) ?? 0} sections ·{" "}
-                      {questionCounts.get(exam.id) ?? 0} questions
-                    </span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="mt-auto flex justify-end">
-                  <Button asChild size="sm">
-                    <Link href={`/admin/exams/${exam.id}`}>
-                      Manage
-                      <ArrowRight className="ms-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+  return <ExamBrowser exams={exams} />;
 }

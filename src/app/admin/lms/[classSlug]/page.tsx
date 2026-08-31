@@ -231,16 +231,6 @@ export default async function AdminLmsClassPage({
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Curriculum · {cls.title.en || cls.title.fa}
-        </h1>
-        <p className="text-muted-foreground">
-          Modules, lessons and questions for class “{cls.slug}”. Save parent items before adding children.
-        </p>
-      </div>
-      <LmsEditor classSlug={classSlug} initialTree={tree} />
-    </div>
+    <LmsEditor classSlug={classSlug} classTitle={cls.title} initialTree={tree} />
   );
 }

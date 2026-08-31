@@ -2,9 +2,20 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ChevronDown, FileCheck2, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import type { Language, LocalizedString } from "@/lib/types";
 import { createClient } from "@/lib/supabase/browser";
+import { useLanguage } from "@/context/language-context";
+import { EmptyState } from "@/components/admin/empty-state";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   deleteExamQuestion,
   deleteMockExam,
@@ -16,7 +27,6 @@ import {
 } from "@/app/actions/exam-admin-actions";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -134,28 +144,306 @@ function publicAudioUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listening/${path}`;
 }
 
-// --- Result toast mapping ---
+// --- Trilingual UI strings (Persian-first, German in Sie-form) ---
 
-const FAILURE_DESCRIPTIONS: Record<string, string> = {
-  unauthorized: "Your session is not authorized for this change.",
-  invalid_input:
-    "Check the fields: Persian text is required, section duration must be 1-240 minutes, match pairs must be complete.",
-  delete_failed: "The server could not delete this item.",
-};
+const ui = {
+  en: {
+    browserTitle: "Mock Exams",
+    browserSubtitle:
+      "Author the TestDaF simulator blueprints (Lesen / Hören sections and their questions).",
+    manage: "Manage",
+    activeAria: "Active",
+    inactiveAria: "Inactive",
+    counts: (s: number, q: number) => `${s} sections · ${q} questions`,
+    empty: "No mock exams yet",
+    emptySub: "Create the first one with the form above.",
+    newExamForm: "New mock exam",
+    codeLabel: "Code",
+    codePaper: "TestDaF (paper)",
+    codeDigital: "TestDaF (digital)",
+    activeLabel: "Active (visible to students)",
+    createExam: "Create exam",
+    heading: "Mock exam",
+    subtitleFor: (code: string) =>
+      `Sections and questions for “${code}”. Save parent items before adding children.`,
+    save: "Save",
+    delete: "Delete",
+    remove: "Remove",
+    unsaved: "unsaved",
+    savedToast: "Saved.",
+    deletedToast: "deleted.",
+    actionFailed: "Action failed",
+    failures: {
+      unauthorized: "Your session is not authorized for this change.",
+      invalid_input:
+        "Check the fields: Persian text is required, section duration must be 1-240 minutes, match pairs must be complete.",
+      delete_failed: "The server could not delete this item.",
+    } as Record<string, string>,
+    newMockExam: "New mock exam",
+    nounExam: "Exam",
+    confirmDeleteExam: "Delete this exam with all its sections and questions?",
+    title: "Title",
+    sectionsLabel: "Sections",
+    addSection: "Add section",
+    saveExamFirst: "Save the exam first",
+    noSections: "No sections yet.",
+    sectionKind: (kind: "lesen" | "hoeren") =>
+      kind === "hoeren" ? "Hören (Listening)" : "Lesen (Reading)",
+    skill: "Skill",
+    durationMin: "Duration (min, 1–240)",
+    sortOrder: "Sort order",
+    minUnit: "min",
+    confirmDeleteSection: "Delete this section with all its questions?",
+    nounSection: "Section",
+    saveSection: "Save section",
+    questionsLabel: "Questions",
+    addQuestion: "Add question",
+    saveSectionFirst: "Save the section first",
+    noQuestions: "No questions yet.",
+    newQuestion: "New question",
+    nounQuestion: "Question",
+    confirmDeleteQuestion: "Delete this question?",
+    type: "Question type",
+    points: "Points",
+    pointsShort: "pt",
+    prompt: "Prompt / statement",
+    typeMc: "Multiple choice",
+    typeJnl: "Ja / Nein / Nichts",
+    typeMatch: "Matching pairs",
+    subtitleAudio: "audio",
+    options: "Options",
+    optionsHint:
+      "Empty options are dropped on save. Mark the correct one with the radio button.",
+    correctAria: (letter: string) => `Correct answer ${letter}`,
+    correctAnswer: "Correct answer",
+    pairs: "Pairs",
+    pairsHint:
+      "Left items map to their same-numbered right item (1→1, 2→2, …). All pairs must be complete.",
+    leftN: (n: number) => `Left ${n}`,
+    rightN: (n: number) => `Right ${n}`,
+    audio: "Audio",
+    noAudioAttached: "No audio attached.",
+    clear: "Clear",
+    uploading: "Uploading…",
+    uploadAria: "Upload audio file",
+    playback: "Playback",
+    playNone: "No audio",
+    playOnce: "Play once",
+    playTwice: "Play twice",
+    unsupportedMime: "Unsupported audio format",
+    unsupportedMimeHint: "Use MP3, WAV, OGG or WebM.",
+    tooLarge: "Audio too large",
+    tooLargeHint: "The file must be 15 MB or smaller.",
+    uploadFailed: "Upload failed",
+    uploadFailedHint: "Could not upload the audio file.",
+    uploadedToast: "Audio uploaded. Save the question to persist it.",
+  },
+  de: {
+    browserTitle: "Probetests",
+    browserSubtitle:
+      "Erstellen Sie die Vorlagen für den TestDaF-Simulator (Lesen-/Hören-Abschnitte und ihre Fragen).",
+    manage: "Verwalten",
+    activeAria: "Aktiv",
+    inactiveAria: "Inaktiv",
+    counts: (s: number, q: number) => `${s} Abschnitte · ${q} Fragen`,
+    empty: "Noch keine Probetests",
+    emptySub: "Legen Sie den ersten mit dem Formular oben an.",
+    newExamForm: "Neuer Probetest",
+    codeLabel: "Code",
+    codePaper: "TestDaF (Papier)",
+    codeDigital: "TestDaF (digital)",
+    activeLabel: "Aktiv (für Studierende sichtbar)",
+    createExam: "Probetest anlegen",
+    heading: "Probetest",
+    subtitleFor: (code: string) =>
+      `Abschnitte und Fragen für „${code}“. Speichern Sie übergeordnete Elemente, bevor Sie untergeordnete hinzufügen.`,
+    save: "Speichern",
+    delete: "Löschen",
+    remove: "Entfernen",
+    unsaved: "ungespeichert",
+    savedToast: "Gespeichert.",
+    deletedToast: "gelöscht.",
+    actionFailed: "Aktion fehlgeschlagen",
+    failures: {
+      unauthorized: "Ihre Sitzung ist für diese Änderung nicht berechtigt.",
+      invalid_input:
+        "Bitte prüfen Sie die Felder: Persischer Text ist erforderlich, die Abschnittsdauer muss 1–240 Minuten betragen, Zuordnungspaare müssen vollständig sein.",
+      delete_failed: "Der Server konnte dieses Element nicht löschen.",
+    } as Record<string, string>,
+    newMockExam: "Neuer Probetest",
+    nounExam: "Probetest",
+    confirmDeleteExam: "Diesen Probetest samt aller Abschnitte und Fragen löschen?",
+    title: "Titel",
+    sectionsLabel: "Abschnitte",
+    addSection: "Abschnitt hinzufügen",
+    saveExamFirst: "Speichern Sie zuerst den Probetest",
+    noSections: "Noch keine Abschnitte.",
+    sectionKind: (kind: "lesen" | "hoeren") => (kind === "hoeren" ? "Hören" : "Lesen"),
+    skill: "Fertigkeit",
+    durationMin: "Dauer (Min., 1–240)",
+    sortOrder: "Reihenfolge",
+    minUnit: "Min.",
+    confirmDeleteSection: "Diesen Abschnitt samt aller Fragen löschen?",
+    nounSection: "Abschnitt",
+    saveSection: "Abschnitt speichern",
+    questionsLabel: "Fragen",
+    addQuestion: "Frage hinzufügen",
+    saveSectionFirst: "Speichern Sie zuerst den Abschnitt",
+    noQuestions: "Noch keine Fragen.",
+    newQuestion: "Neue Frage",
+    nounQuestion: "Frage",
+    confirmDeleteQuestion: "Diese Frage löschen?",
+    type: "Fragetyp",
+    points: "Punkte",
+    pointsShort: "Pkt",
+    prompt: "Fragestellung / Aussage",
+    typeMc: "Multiple Choice",
+    typeJnl: "Ja / Nein / Nichts",
+    typeMatch: "Zuordnung (Paare)",
+    subtitleAudio: "Audio",
+    options: "Optionen",
+    optionsHint:
+      "Leere Optionen werden beim Speichern verworfen. Markieren Sie die richtige Option mit dem Radioknopf.",
+    correctAria: (letter: string) => `Richtige Antwort ${letter}`,
+    correctAnswer: "Richtige Antwort",
+    pairs: "Paare",
+    pairsHint:
+      "Linke Einträge werden dem gleichnummerierten rechten Eintrag zugeordnet (1→1, 2→2, …). Alle Paare müssen vollständig sein.",
+    leftN: (n: number) => `Links ${n}`,
+    rightN: (n: number) => `Rechts ${n}`,
+    audio: "Audio",
+    noAudioAttached: "Kein Audio angehängt.",
+    clear: "Entfernen",
+    uploading: "Wird hochgeladen…",
+    uploadAria: "Audiodatei hochladen",
+    playback: "Wiedergabe",
+    playNone: "Kein Audio",
+    playOnce: "Einmal abspielen",
+    playTwice: "Zweimal abspielen",
+    unsupportedMime: "Nicht unterstütztes Audioformat",
+    unsupportedMimeHint: "Bitte MP3, WAV, OGG oder WebM verwenden.",
+    tooLarge: "Audio zu groß",
+    tooLargeHint: "Die Datei darf maximal 15 MB groß sein.",
+    uploadFailed: "Upload fehlgeschlagen",
+    uploadFailedHint: "Die Audiodatei konnte nicht hochgeladen werden.",
+    uploadedToast: "Audio hochgeladen. Speichern Sie die Frage, um es zu übernehmen.",
+  },
+  fa: {
+    browserTitle: "آزمون‌های آزمایشی",
+    browserSubtitle:
+      "طراحی آزمون‌های شبیه‌ساز TestDaF (بخش‌های Lesen / Hören و پرسش‌هایشان).",
+    manage: "مدیریت",
+    activeAria: "فعال",
+    inactiveAria: "غیرفعال",
+    counts: (s: number, q: number) => `${s} بخش · ${q} پرسش`,
+    empty: "هنوز آزمون آزمایشی ساخته نشده است",
+    emptySub: "اولین آزمون را با فرم بالا بسازید.",
+    newExamForm: "آزمون آزمایشی جدید",
+    codeLabel: "کد آزمون",
+    codePaper: "TestDaF (کاغذی)",
+    codeDigital: "TestDaF (دیجیتال)",
+    activeLabel: "فعال (نمایش برای هنرجویان)",
+    createExam: "ایجاد آزمون",
+    heading: "آزمون آزمایشی",
+    subtitleFor: (code: string) =>
+      `بخش‌ها و پرسش‌های آزمون ${code}. پیش از افزودن مورد فرزند، ابتدا مورد والد را ذخیره کنید.`,
+    save: "ذخیره",
+    delete: "حذف",
+    remove: "حذف",
+    unsaved: "ذخیره‌نشده",
+    savedToast: "ذخیره شد.",
+    deletedToast: "حذف شد.",
+    actionFailed: "انجام عملیات ناموفق بود",
+    failures: {
+      unauthorized: "اجازهٔ انجام این تغییر را ندارید.",
+      invalid_input:
+        "فیلدها را بررسی کنید: متن فارسی الزامی است، مدت بخش باید ۱ تا ۲۴۰ دقیقه باشد و جفت‌های تطبیق باید کامل باشند.",
+      delete_failed: "سرور نتوانست این مورد را حذف کند.",
+    } as Record<string, string>,
+    newMockExam: "آزمون آزمایشی جدید",
+    nounExam: "آزمون",
+    confirmDeleteExam: "این آزمون همراه با همه بخش‌ها و پرسش‌هایش حذف شود؟",
+    title: "عنوان",
+    sectionsLabel: "بخش‌ها",
+    addSection: "افزودن بخش",
+    saveExamFirst: "ابتدا آزمون را ذخیره کنید",
+    noSections: "هنوز بخشی افزوده نشده است.",
+    sectionKind: (kind: "lesen" | "hoeren") =>
+      kind === "hoeren" ? "Hören (شنیدن)" : "Lesen (خواندن)",
+    skill: "مهارت",
+    durationMin: "مدت (دقیقه، ۱ تا ۲۴۰)",
+    sortOrder: "ترتیب",
+    minUnit: "دقیقه",
+    confirmDeleteSection: "این بخش همراه با همه پرسش‌هایش حذف شود؟",
+    nounSection: "بخش",
+    saveSection: "ذخیره بخش",
+    questionsLabel: "پرسش‌ها",
+    addQuestion: "افزودن پرسش",
+    saveSectionFirst: "ابتدا بخش را ذخیره کنید",
+    noQuestions: "هنوز پرسشی افزوده نشده است.",
+    newQuestion: "پرسش جدید",
+    nounQuestion: "پرسش",
+    confirmDeleteQuestion: "این پرسش حذف شود؟",
+    type: "نوع پرسش",
+    points: "امتیاز",
+    pointsShort: "امتیاز",
+    prompt: "متن پرسش",
+    typeMc: "چندگزینه‌ای",
+    typeJnl: "Ja / Nein / Nichts",
+    typeMatch: "تطبیق جفت‌ها",
+    subtitleAudio: "صدا",
+    options: "گزینه‌ها",
+    optionsHint:
+      "گزینه‌های خالی هنگام ذخیره حذف می‌شوند. گزینه درست را با دکمهٔ رادیویی مشخص کنید.",
+    correctAria: (letter: string) => `گزینه درست ${letter}`,
+    correctAnswer: "گزینه درست",
+    pairs: "جفت‌ها",
+    pairsHint:
+      "هر مورد در ستون چپ به مورد هم‌شمارهٔ خود در ستون راست وصل می‌شود (۱→۱، ۲→۲، …). تکمیل همه جفت‌ها الزامی است.",
+    leftN: (n: number) => `چپ ${n}`,
+    rightN: (n: number) => `راست ${n}`,
+    audio: "پخش صدا",
+    noAudioAttached: "فایل صوتی پیوست نشده است.",
+    clear: "حذف فایل",
+    uploading: "در حال بارگذاری…",
+    uploadAria: "بارگذاری فایل صوتی",
+    playback: "پخش صدا",
+    playNone: "بدون صدا",
+    playOnce: "یک‌بار",
+    playTwice: "دوبار",
+    unsupportedMime: "قالب صوتی پشتیبانی نمی‌شود",
+    unsupportedMimeHint: "از MP3، WAV، OGG یا WebM استفاده کنید.",
+    tooLarge: "فایل صوتی بزرگ است",
+    tooLargeHint: "حجم فایل باید حداکثر ۱۵ مگابایت باشد.",
+    uploadFailed: "بارگذاری ناموفق بود",
+    uploadFailedHint: "فایل صوتی بارگذاری نشد.",
+    uploadedToast: "فایل صوتی بارگذاری شد. برای ثبت نهایی، پرسش را ذخیره کنید.",
+  },
+} as const;
+
+type UiContent = (typeof ui)[keyof typeof ui];
+
+// --- Result toast mapping ---
 
 function reportResult(
   toast: ReturnType<typeof useToast>["toast"],
   result: ActionResult,
+  t: UiContent,
   deletedNoun?: string
 ): void {
   if (result.success) {
-    toast({ title: result.message === "deleted" ? `${deletedNoun ?? "Item"} deleted.` : "Saved." });
+    toast({
+      title:
+        result.message === "deleted"
+          ? `${deletedNoun ?? ""} ${t.deletedToast}`.trim()
+          : t.savedToast,
+    });
     return;
   }
   toast({
     variant: "destructive",
-    title: "Action failed",
-    description: FAILURE_DESCRIPTIONS[result.message] ?? result.message,
+    title: t.actionFailed,
+    description: t.failures[result.message] ?? result.message,
   });
 }
 
@@ -334,6 +622,8 @@ function AudioBlock({
   onPatch: (patch: Partial<QuestionNode>) => void;
 }) {
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [isUploading, setIsUploading] = useState(false);
   // Object URL of the file being uploaded — revoked as soon as the upload
   // settles so no blob URL ever leaks.
@@ -348,16 +638,16 @@ function AudioBlock({
     if (!ALLOWED_AUDIO_MIME.includes(file.type)) {
       toast({
         variant: "destructive",
-        title: "Unsupported audio format",
-        description: "Use MP3, WAV, OGG or WebM.",
+        title: t.unsupportedMime,
+        description: t.unsupportedMimeHint,
       });
       return;
     }
     if (file.size > MAX_AUDIO_BYTES) {
       toast({
         variant: "destructive",
-        title: "Audio too large",
-        description: "The file must be 15 MB or smaller.",
+        title: t.tooLarge,
+        description: t.tooLargeHint,
       });
       return;
     }
@@ -381,13 +671,13 @@ function AudioBlock({
         // "No audio" to "Play once" automatically.
         ...(question.playsAllowed === 0 ? { playsAllowed: 1 } : {}),
       });
-      toast({ title: "Audio uploaded. Save the question to persist it." });
+      toast({ title: t.uploadedToast });
     } catch (error) {
       console.error("Audio upload failed:", error);
       toast({
         variant: "destructive",
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Could not upload the audio file.",
+        title: t.uploadFailed,
+        description: error instanceof Error ? error.message : t.uploadFailedHint,
       });
     } finally {
       setIsUploading(false);
@@ -400,14 +690,14 @@ function AudioBlock({
   };
 
   const playOptions = [
-    { value: "0", label: "No audio" },
-    { value: "1", label: "Play once" },
-    { value: "2", label: "Play twice" },
+    { value: "0", label: t.playNone },
+    { value: "1", label: t.playOnce },
+    { value: "2", label: t.playTwice },
   ];
 
   return (
     <div className="space-y-3 rounded-lg border border-dashed p-3">
-      <div className="text-sm font-medium">Audio</div>
+      <div className="text-sm font-medium">{t.audio}</div>
 
       {question.audioPath ? (
         <div className="space-y-2">
@@ -417,11 +707,11 @@ function AudioBlock({
             {question.audioFileName ? ` · ${question.audioFileName}` : ""}
           </p>
           <Button size="sm" variant="outline" onClick={handleClear} disabled={isUploading}>
-            Clear
+            {t.clear}
           </Button>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">No audio attached.</p>
+        <p className="text-xs text-muted-foreground">{t.noAudioAttached}</p>
       )}
 
       {pendingUrl && <audio controls src={pendingUrl} className="w-full" />}
@@ -431,7 +721,7 @@ function AudioBlock({
           type="file"
           accept=".mp3,.wav,.ogg,.webm"
           disabled={isUploading || !examId}
-          aria-label="Upload audio file"
+          aria-label={t.uploadAria}
           className="max-w-sm"
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -442,13 +732,13 @@ function AudioBlock({
         {isUploading && (
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Uploading…
+            {t.uploading}
           </span>
         )}
       </div>
 
       <div className="space-y-1 sm:w-64">
-        <Label>Playback</Label>
+        <Label>{t.playback}</Label>
         <Select
           value={String(question.playsAllowed)}
           onValueChange={(playsAllowed) => onPatch({ playsAllowed: Number(playsAllowed) })}
@@ -481,6 +771,8 @@ interface ExamCardProps {
 function ExamCard({ examNode, onPatch, onAddSection, renderSection }: ExamCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [isPending, startTransition] = useTransition();
 
   const handleSave = () => {
@@ -495,7 +787,7 @@ function ExamCard({ examNode, onPatch, onAddSection, renderSection }: ExamCardPr
     startTransition(() => {
       void (async () => {
         const result = await upsertMockExam(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           if (result.id && !examNode.id) onPatch({ id: result.id });
           router.refresh();
@@ -505,14 +797,14 @@ function ExamCard({ examNode, onPatch, onAddSection, renderSection }: ExamCardPr
   };
 
   const handleDelete = () => {
-    if (!examNode.id || !window.confirm("Delete this exam with all its sections and questions?")) return;
+    if (!examNode.id || !window.confirm(t.confirmDeleteExam)) return;
     const fd = new FormData();
     fd.set("id", examNode.id);
 
     startTransition(() => {
       void (async () => {
         const result = await deleteMockExam(fd);
-        reportResult(toast, result, "Exam");
+        reportResult(toast, result, t, t.nounExam);
         if (result.success) router.push("/admin/exams");
       })();
     });
@@ -522,20 +814,20 @@ function ExamCard({ examNode, onPatch, onAddSection, renderSection }: ExamCardPr
     <Card className="border-2">
       <CardHeader className="flex-row items-start justify-between space-y-0">
         <CardTitle className="text-base">
-          {examNode.title.fa || examNode.title.en || "New mock exam"}
+          {examNode.title.fa || examNode.title.en || t.newMockExam}
           {!examNode.id && (
-            <span className="ms-2 align-middle text-xs font-normal text-muted-foreground">unsaved</span>
+            <span className="ms-2 align-middle text-xs font-normal text-muted-foreground">{t.unsaved}</span>
           )}
         </CardTitle>
         <div className="flex gap-2">
           <Button size="sm" onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Save
+            {t.save}
           </Button>
           {examNode.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
-              Delete
+              {t.delete}
             </Button>
           ) : null}
         </div>
@@ -543,7 +835,7 @@ function ExamCard({ examNode, onPatch, onAddSection, renderSection }: ExamCardPr
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-[220px_1fr] sm:items-end">
           <div className="space-y-1">
-            <Label htmlFor={`exam-${examNode.key}-code`}>Code</Label>
+            <Label htmlFor={`exam-${examNode.key}-code`}>{t.codeLabel}</Label>
             <Select
               value={examNode.code}
               onValueChange={(code) => onPatch({ code: code as ExamCode })}
@@ -554,7 +846,7 @@ function ExamCard({ examNode, onPatch, onAddSection, renderSection }: ExamCardPr
               <SelectContent>
                 {EXAM_CODES.map((code) => (
                   <SelectItem key={code} value={code}>
-                    {code === "testdaf_paper" ? "TestDaF (paper)" : "TestDaF (digital)"}
+                    {code === "testdaf_paper" ? t.codePaper : t.codeDigital}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -566,33 +858,35 @@ function ExamCard({ examNode, onPatch, onAddSection, renderSection }: ExamCardPr
               checked={examNode.isActive}
               onCheckedChange={(checked) => onPatch({ isActive: checked === true })}
             />
-            <Label htmlFor={`exam-${examNode.key}-active`}>Active (visible to students)</Label>
+            <Label htmlFor={`exam-${examNode.key}-active`}>{t.activeLabel}</Label>
           </div>
         </div>
 
         <LangInputs
           idPrefix={`exam-${examNode.key}-title`}
-          label="Title"
+          label={t.title}
           value={examNode.title}
           onChange={(title) => onPatch({ title })}
         />
 
         <div className="space-y-2 rounded-lg border border-dashed p-3">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium">Sections ({examNode.sections.length})</div>
+            <div className="text-sm font-medium">
+              {t.sectionsLabel} ({examNode.sections.length})
+            </div>
             <Button
               size="sm"
               variant="outline"
               onClick={onAddSection}
               disabled={!examNode.id}
-              title={examNode.id ? undefined : "Save the exam first"}
+              title={examNode.id ? undefined : t.saveExamFirst}
             >
               <Plus className="me-1 h-4 w-4" />
-              Add section
+              {t.addSection}
             </Button>
           </div>
           {examNode.sections.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No sections yet.</p>
+            <p className="text-sm text-muted-foreground">{t.noSections}</p>
           ) : (
             <div className="space-y-2">{examNode.sections.map(renderSection)}</div>
           )}
@@ -623,6 +917,8 @@ function SectionCard({
 }: SectionCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -637,7 +933,7 @@ function SectionCard({
     startTransition(() => {
       void (async () => {
         const result = await upsertMockSection(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           if (result.id && !sectionNode.id) onPatch({ id: result.id });
           router.refresh();
@@ -647,7 +943,7 @@ function SectionCard({
   };
 
   const handleDelete = () => {
-    if (!sectionNode.id || !window.confirm("Delete this section with all its questions?")) return;
+    if (!sectionNode.id || !window.confirm(t.confirmDeleteSection)) return;
     const fd = new FormData();
     fd.set("id", sectionNode.id);
     fd.set("examId", examId);
@@ -655,7 +951,7 @@ function SectionCard({
     startTransition(() => {
       void (async () => {
         const result = await deleteMockSection(fd);
-        reportResult(toast, result, "Section");
+        reportResult(toast, result, t, t.nounSection);
         if (result.success) router.refresh();
       })();
     });
@@ -665,30 +961,30 @@ function SectionCard({
     <CollapsibleSection
       open={open}
       onToggle={() => setOpen((v) => !v)}
-      title={sectionNode.section === "hoeren" ? "Hören (Listening)" : "Lesen (Reading)"}
-      subtitle={`${sectionNode.durationMin || "?"} min${!sectionNode.id ? " · unsaved" : ""}`}
+      title={t.sectionKind(sectionNode.section)}
+      subtitle={`${sectionNode.durationMin || "?"} ${t.minUnit}${!sectionNode.id ? ` · ${t.unsaved}` : ""}`}
     >
       <div className="space-y-4">
         <div className="flex flex-wrap justify-end gap-2">
           <Button size="sm" onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Save section
+            {t.saveSection}
           </Button>
           {sectionNode.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
-              Delete section
+              {t.delete}
             </Button>
           ) : (
             <Button size="sm" variant="outline" onClick={onRemove} disabled={isPending}>
-              Remove
+              {t.remove}
             </Button>
           )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1">
-            <Label htmlFor={`section-${sectionNode.key}-kind`}>Skill</Label>
+            <Label htmlFor={`section-${sectionNode.key}-kind`}>{t.skill}</Label>
             <Select
               value={sectionNode.section}
               onValueChange={(section) => onPatch({ section: section as MockSectionKind })}
@@ -699,7 +995,7 @@ function SectionCard({
               <SelectContent>
                 {SECTION_KINDS.map((kind) => (
                   <SelectItem key={kind} value={kind}>
-                    {kind === "hoeren" ? "Hören (Listening)" : "Lesen (Reading)"}
+                    {t.sectionKind(kind)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -707,14 +1003,14 @@ function SectionCard({
           </div>
           <NumberField
             id={`section-${sectionNode.key}-duration`}
-            label="Duration (min, 1–240)"
+            label={t.durationMin}
             value={sectionNode.durationMin}
             onChange={(durationMin) => onPatch({ durationMin })}
             min={1}
           />
           <NumberField
             id={`section-${sectionNode.key}-sort`}
-            label="Sort order"
+            label={t.sortOrder}
             value={sectionNode.sortOrder}
             onChange={(sortOrder) => onPatch({ sortOrder })}
             min={0}
@@ -723,20 +1019,22 @@ function SectionCard({
 
         <div className="space-y-2 rounded-lg border border-dashed p-3">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium">Questions ({sectionNode.questions.length})</div>
+            <div className="text-sm font-medium">
+              {t.questionsLabel} ({sectionNode.questions.length})
+            </div>
             <Button
               size="sm"
               variant="outline"
               onClick={onAddQuestion}
               disabled={!sectionNode.id}
-              title={sectionNode.id ? undefined : "Save the section first"}
+              title={sectionNode.id ? undefined : t.saveSectionFirst}
             >
               <Plus className="me-1 h-4 w-4" />
-              Add question
+              {t.addQuestion}
             </Button>
           </div>
           {sectionNode.questions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No questions yet.</p>
+            <p className="text-sm text-muted-foreground">{t.noQuestions}</p>
           ) : (
             <div className="space-y-2">
               {sectionNode.questions.map(renderQuestion)}
@@ -760,8 +1058,13 @@ interface QuestionCardProps {
 function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const questionTypeLabel = (type: EditorQuestionType) =>
+    type === "mc" ? t.typeMc : type === "jnl" ? t.typeJnl : t.typeMatch;
 
   const handleTypeChange = (type: string) => {
     const nextType = type as EditorQuestionType;
@@ -813,7 +1116,7 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
     startTransition(() => {
       void (async () => {
         const result = await upsertExamQuestion(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           if (result.id && !question.id) onPatch({ id: result.id });
           router.refresh();
@@ -823,7 +1126,7 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
   };
 
   const handleDelete = () => {
-    if (!question.id || !window.confirm("Delete this question?")) return;
+    if (!question.id || !window.confirm(t.confirmDeleteQuestion)) return;
     const fd = new FormData();
     fd.set("id", question.id);
     fd.set("examId", examId);
@@ -831,45 +1134,45 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
     startTransition(() => {
       void (async () => {
         const result = await deleteExamQuestion(fd);
-        reportResult(toast, result, "Question");
+        reportResult(toast, result, t, t.nounQuestion);
         if (result.success) router.refresh();
       })();
     });
   };
 
   const promptSnippet =
-    question.prompt.fa || question.prompt.en || question.prompt.de || "New question";
+    question.prompt.fa || question.prompt.en || question.prompt.de || t.newQuestion;
 
   return (
     <CollapsibleSection
       open={open}
       onToggle={() => setOpen((v) => !v)}
       title={promptSnippet}
-      subtitle={`${question.type.toUpperCase()} · ${question.points || "1"} pt${
-        question.audioPath ? " · audio" : ""
-      }${!question.id ? " · unsaved" : ""}`}
+      subtitle={`${question.type.toUpperCase()} · ${question.points || "1"} ${t.pointsShort}${
+        question.audioPath ? ` · ${t.subtitleAudio}` : ""
+      }${!question.id ? ` · ${t.unsaved}` : ""}`}
     >
       <div className="space-y-4">
         <div className="flex flex-wrap justify-end gap-2">
           <Button size="sm" onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Save question
+            {t.save}
           </Button>
           {question.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
-              Delete question
+              {t.delete}
             </Button>
           ) : (
             <Button size="sm" variant="outline" onClick={onRemove} disabled={isPending}>
-              Remove
+              {t.remove}
             </Button>
           )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1">
-            <Label>Type</Label>
+            <Label>{t.type}</Label>
             <Select value={question.type} onValueChange={handleTypeChange}>
               <SelectTrigger>
                 <SelectValue />
@@ -877,7 +1180,7 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
               <SelectContent>
                 {QUESTION_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
-                    {type === "mc" ? "Multiple choice" : type === "jnl" ? "Ja / Nein / Nichts" : "Matching pairs"}
+                    {questionTypeLabel(type)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -885,14 +1188,14 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
           </div>
           <NumberField
             id={`question-${question.key}-points`}
-            label="Points"
+            label={t.points}
             value={question.points}
             onChange={(points) => onPatch({ points })}
             min={1}
           />
           <NumberField
             id={`question-${question.key}-sort`}
-            label="Sort order"
+            label={t.sortOrder}
             value={question.sortOrder}
             onChange={(sortOrder) => onPatch({ sortOrder })}
             min={0}
@@ -901,7 +1204,7 @@ function QuestionCard({ question, examId, onPatch, onRemove }: QuestionCardProps
 
         <LangTextareas
           idPrefix={`question-${question.key}-prompt`}
-          label="Prompt / statement"
+          label={t.prompt}
           value={question.prompt}
           onChange={(prompt) => onPatch({ prompt })}
           rows={2}
@@ -932,6 +1235,9 @@ function McSubForm({
   questionKey: string;
   onChange: (next: QuestionData) => void;
 }) {
+  const { language } = useLanguage();
+  const t = ui[language];
+
   const setCount = (delta: number) => {
     const optionCount = Math.min(Math.max(data.optionCount + delta, 1), LETTERS.length);
     onChange({ ...data, optionCount });
@@ -940,7 +1246,7 @@ function McSubForm({
   return (
     <div className="space-y-2 rounded-lg border border-dashed p-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium">Options</div>
+        <div className="text-sm font-medium">{t.options}</div>
         <div className="flex items-center gap-1">
           <Button type="button" size="icon" variant="outline" className="h-7 w-7" onClick={() => setCount(-1)} disabled={data.optionCount <= 1}>
             −
@@ -951,9 +1257,7 @@ function McSubForm({
           </Button>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Empty options are dropped on save. Mark the correct one with the radio button.
-      </p>
+      <p className="text-xs text-muted-foreground">{t.optionsHint}</p>
       {LETTERS.slice(0, data.optionCount).map((letter, i) => {
         const text = data.texts[i];
         if (!text) return null;
@@ -965,7 +1269,7 @@ function McSubForm({
                 name={`correct-${questionKey}`}
                 checked={data.correct === letter}
                 onChange={() => onChange({ ...data, correct: letter })}
-                aria-label={`Correct answer ${letter}`}
+                aria-label={t.correctAria(letter)}
                 className="h-4 w-4"
               />
               {letter.toUpperCase()}
@@ -980,7 +1284,7 @@ function McSubForm({
                   onChange={(e) =>
                     onChange({
                       ...data,
-                      texts: data.texts.map((t, j) => (j === i ? { ...t, [lang]: e.target.value } : t)),
+                      texts: data.texts.map((entry, j) => (j === i ? { ...entry, [lang]: e.target.value } : entry)),
                     })
                   }
                 />
@@ -1000,9 +1304,12 @@ function JnlSubForm({
   data: JnlState;
   onChange: (next: QuestionData) => void;
 }) {
+  const { language } = useLanguage();
+  const t = ui[language];
+
   return (
     <div className="space-y-1 rounded-lg border border-dashed p-3 sm:w-64">
-      <Label>Correct answer</Label>
+      <Label>{t.correctAnswer}</Label>
       <Select value={data.correct} onValueChange={(correct) => onChange({ kind: "jnl", correct: correct as JnlValue })}>
         <SelectTrigger>
           <SelectValue />
@@ -1026,6 +1333,9 @@ function MatchSubForm({
   data: MatchState;
   onChange: (next: QuestionData) => void;
 }) {
+  const { language } = useLanguage();
+  const t = ui[language];
+
   const setCount = (delta: number) => {
     const pairCount = Math.min(Math.max(data.pairCount + delta, 1), INDICES.length);
     onChange({ ...data, pairCount });
@@ -1034,7 +1344,7 @@ function MatchSubForm({
   return (
     <div className="space-y-2 rounded-lg border border-dashed p-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium">Pairs</div>
+        <div className="text-sm font-medium">{t.pairs}</div>
         <div className="flex items-center gap-1">
           <Button type="button" size="icon" variant="outline" className="h-7 w-7" onClick={() => setCount(-1)} disabled={data.pairCount <= 1}>
             −
@@ -1045,9 +1355,7 @@ function MatchSubForm({
           </Button>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Left items map to their same-numbered right item (1→1, 2→2, …). All pairs must be complete.
-      </p>
+      <p className="text-xs text-muted-foreground">{t.pairsHint}</p>
       {INDICES.slice(0, data.pairCount).map((i) => {
         const left = data.left[i];
         const right = data.right[i];
@@ -1055,7 +1363,7 @@ function MatchSubForm({
         return (
           <div key={i} className="grid gap-2 rounded-md border p-2 md:grid-cols-2">
             <div>
-              <div className="mb-1 text-xs font-medium text-muted-foreground">Left {i + 1}</div>
+              <div className="mb-1 text-xs font-medium text-muted-foreground">{t.leftN(i + 1)}</div>
               <div className="grid gap-1 sm:grid-cols-3">
                 {LANGS.map((lang) => (
                   <Input
@@ -1066,7 +1374,7 @@ function MatchSubForm({
                     onChange={(e) =>
                       onChange({
                         ...data,
-                        left: data.left.map((t, j) => (j === i ? { ...t, [lang]: e.target.value } : t)),
+                        left: data.left.map((entry, j) => (j === i ? { ...entry, [lang]: e.target.value } : entry)),
                       })
                     }
                   />
@@ -1074,7 +1382,7 @@ function MatchSubForm({
               </div>
             </div>
             <div>
-              <div className="mb-1 text-xs font-medium text-muted-foreground">Right {i + 1}</div>
+              <div className="mb-1 text-xs font-medium text-muted-foreground">{t.rightN(i + 1)}</div>
               <div className="grid gap-1 sm:grid-cols-3">
                 {LANGS.map((lang) => (
                   <Input
@@ -1085,7 +1393,7 @@ function MatchSubForm({
                     onChange={(e) =>
                       onChange({
                         ...data,
-                        right: data.right.map((t, j) => (j === i ? { ...t, [lang]: e.target.value } : t)),
+                        right: data.right.map((entry, j) => (j === i ? { ...entry, [lang]: e.target.value } : entry)),
                       })
                     }
                   />
@@ -1102,7 +1410,11 @@ function MatchSubForm({
 // --- Root editor ---
 
 export function ExamEditor({ initialExam }: { initialExam: ExamNode }) {
+  const { language } = useLanguage();
+  const t = ui[language];
   const [exam, setExam] = useState<ExamNode>(initialExam);
+
+  const displayTitle = exam.title[language] || exam.title.fa || exam.title.en;
 
   const patchExam = useCallback((key: string, patch: Partial<ExamNode>) => {
     setExam((prev) => (prev.key === key ? { ...prev, ...patch } : prev));
@@ -1156,6 +1468,13 @@ export function ExamEditor({ initialExam }: { initialExam: ExamNode }) {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t.heading} · {displayTitle}
+        </h1>
+        <p className="text-muted-foreground">{t.subtitleFor(exam.code)}</p>
+      </div>
+
       <ExamCard
         key={exam.key}
         examNode={exam}
@@ -1190,6 +1509,8 @@ export function ExamEditor({ initialExam }: { initialExam: ExamNode }) {
 export function ExamCreateForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [code, setCode] = useState<ExamCode>("testdaf_paper");
   const [title, setTitle] = useState<LocalizedString>(emptyLocalized());
   const [isActive, setIsActive] = useState(false);
@@ -1206,7 +1527,7 @@ export function ExamCreateForm() {
     startTransition(() => {
       void (async () => {
         const result = await upsertMockExam(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           setTitle(emptyLocalized());
           setIsActive(false);
@@ -1219,12 +1540,12 @@ export function ExamCreateForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">New mock exam</CardTitle>
+        <CardTitle className="text-base">{t.newExamForm}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-[220px_1fr] sm:items-end">
           <div className="space-y-1">
-            <Label htmlFor="new-exam-code">Code</Label>
+            <Label htmlFor="new-exam-code">{t.codeLabel}</Label>
             <Select value={code} onValueChange={(value) => setCode(value as ExamCode)}>
               <SelectTrigger id="new-exam-code">
                 <SelectValue />
@@ -1232,7 +1553,7 @@ export function ExamCreateForm() {
               <SelectContent>
                 {EXAM_CODES.map((examCode) => (
                   <SelectItem key={examCode} value={examCode}>
-                    {examCode === "testdaf_paper" ? "TestDaF (paper)" : "TestDaF (digital)"}
+                    {examCode === "testdaf_paper" ? t.codePaper : t.codeDigital}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1244,19 +1565,91 @@ export function ExamCreateForm() {
               checked={isActive}
               onCheckedChange={(checked) => setIsActive(checked === true)}
             />
-            <Label htmlFor="new-exam-active">Active (visible to students)</Label>
+            <Label htmlFor="new-exam-active">{t.activeLabel}</Label>
           </div>
         </div>
 
-        <LangInputs idPrefix="new-exam-title" label="Title" value={title} onChange={setTitle} />
+        <LangInputs idPrefix="new-exam-title" label={t.title} value={title} onChange={setTitle} />
 
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Create exam
+            {t.createExam}
           </Button>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// --- Exam list page body (heading + create form + grid) ---
+
+export interface ExamListItem {
+  id: string;
+  code: string;
+  title: LocalizedString;
+  isActive: boolean;
+  sectionCount: number;
+  questionCount: number;
+}
+
+export function ExamBrowser({ exams }: { exams: ExamListItem[] }) {
+  const { language } = useLanguage();
+  const t = ui[language];
+
+  const titleFor = (exam: ExamListItem) =>
+    exam.title[language] || exam.title.fa || exam.title.en;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{t.browserTitle}</h1>
+        <p className="text-muted-foreground">{t.browserSubtitle}</p>
+      </div>
+
+      <ExamCreateForm />
+
+      {exams.length === 0 ? (
+        <EmptyState
+          icon={FileCheck2}
+          en={ui.en.empty}
+          de={ui.de.empty}
+          fa={ui.fa.empty}
+          subEn={ui.en.emptySub}
+          subDe={ui.de.emptySub}
+          subFa={ui.fa.emptySub}
+        />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {exams.map((exam) => (
+            <Card key={exam.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <span
+                    aria-label={exam.isActive ? t.activeAria : t.inactiveAria}
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                      exam.isActive ? "bg-emerald-500" : "bg-muted-foreground/40"
+                    }`}
+                  />
+                  {titleFor(exam)}
+                </CardTitle>
+                <CardDescription className="flex items-center gap-2">
+                  <Badge variant="outline">{exam.code}</Badge>
+                  <span>{t.counts(exam.sectionCount, exam.questionCount)}</span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto flex justify-end">
+                <Button asChild size="sm">
+                  <Link href={`/admin/exams/${exam.id}`}>
+                    {t.manage}
+                    <ArrowRight className="ms-2 h-4 w-4 rtl:rotate-180" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

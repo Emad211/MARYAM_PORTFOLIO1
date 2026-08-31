@@ -2,8 +2,10 @@
 
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { ChevronDown, FolderOpen, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import type { Language, LocalizedString } from "@/lib/types";
+import { SKILL_LABELS } from "@/lib/label-utils";
+import { useLanguage } from "@/context/language-context";
 import {
   deleteLmsLesson,
   deleteLmsModule,
@@ -28,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { EmptyState } from "@/components/admin/empty-state";
 
 // --- Editor-side tree types (mapped from DB rows by the server page) ---
 
@@ -106,28 +109,220 @@ function localizedArray(): LocalizedString[] {
   return INDICES.map(() => emptyLocalized());
 }
 
-// --- Result toast mapping ---
+// --- Trilingual UI strings (Persian-first, German in Sie-form) ---
 
-const FAILURE_DESCRIPTIONS: Record<string, string> = {
-  unauthorized: "Your session is not authorized for this change.",
-  invalid_input:
-    "Check the fields: Persian text is required, URLs must be valid, match pairs must be complete.",
-  delete_failed: "The server could not delete this item.",
-};
+const ui = {
+  en: {
+    headingPrefix: "Curriculum",
+    subtitle:
+      "Modules, lessons and questions for this class. Save parent items before adding children.",
+    save: "Save",
+    delete: "Delete",
+    remove: "Remove",
+    unsaved: "unsaved",
+    savedToast: "Saved.",
+    deletedToast: "deleted.",
+    actionFailed: "Action failed",
+    failures: {
+      unauthorized: "Your session is not authorized for this change.",
+      invalid_input:
+        "Check the fields: Persian text is required, URLs must be valid, match pairs must be complete.",
+      delete_failed: "The server could not delete this item.",
+    } as Record<string, string>,
+    newModule: "New module",
+    nounModule: "Module",
+    confirmDeleteModule: "Delete this module with all its lessons and questions?",
+    title: "Title",
+    sortOrder: "Sort order",
+    lessonsLabel: "Lessons",
+    addLesson: "Add lesson",
+    saveModuleFirst: "Save the module first",
+    noLessons: "No lessons yet.",
+    newLesson: "New lesson",
+    nounLesson: "Lesson",
+    confirmDeleteLesson: "Delete this lesson with all its questions?",
+    body: "Body",
+    videoUrl: "Video URL (optional)",
+    skill: "Skill",
+    durationMin: "Duration (min)",
+    freePreview: "free preview",
+    freePreviewLabel: "Free preview",
+    questionsLabel: "Questions",
+    addQuestion: "Add question",
+    saveLessonFirst: "Save the lesson first",
+    noQuestions: "No questions yet.",
+    newQuestion: "New question",
+    nounQuestion: "Question",
+    confirmDeleteQuestion: "Delete this question?",
+    type: "Type",
+    points: "Points",
+    pointsShort: "pt",
+    prompt: "Prompt / statement",
+    typeMc: "Multiple choice",
+    typeJnl: "Ja / Nein / Nichts",
+    typeMatch: "Matching pairs",
+    options: "Options",
+    optionsHint:
+      "Empty options are dropped on save. Mark the correct one with the radio button.",
+    correctAria: (letter: string) => `Correct answer ${letter}`,
+    correctAnswer: "Correct answer",
+    pairs: "Pairs",
+    pairsHint:
+      "Left items map to their same-numbered right item (1→1, 2→2, …). All pairs must be complete.",
+    leftN: (n: number) => `Left ${n}`,
+    rightN: (n: number) => `Right ${n}`,
+    noModules: "No modules yet for this class. Add the first one below.",
+    addModule: "Add module",
+  },
+  de: {
+    headingPrefix: "Lehrplan",
+    subtitle:
+      "Module, Lektionen und Fragen für diesen Kurs. Speichern Sie übergeordnete Elemente, bevor Sie untergeordnete hinzufügen.",
+    save: "Speichern",
+    delete: "Löschen",
+    remove: "Entfernen",
+    unsaved: "ungespeichert",
+    savedToast: "Gespeichert.",
+    deletedToast: "gelöscht.",
+    actionFailed: "Aktion fehlgeschlagen",
+    failures: {
+      unauthorized: "Ihre Sitzung ist für diese Änderung nicht berechtigt.",
+      invalid_input:
+        "Bitte prüfen Sie die Felder: Persischer Text ist erforderlich, URLs müssen gültig sein, Zuordnungspaare müssen vollständig sein.",
+      delete_failed: "Der Server konnte dieses Element nicht löschen.",
+    } as Record<string, string>,
+    newModule: "Neues Modul",
+    nounModule: "Modul",
+    confirmDeleteModule: "Dieses Modul samt aller Lektionen und Fragen löschen?",
+    title: "Titel",
+    sortOrder: "Reihenfolge",
+    lessonsLabel: "Lektionen",
+    addLesson: "Lektion hinzufügen",
+    saveModuleFirst: "Speichern Sie zuerst das Modul",
+    noLessons: "Noch keine Lektionen.",
+    newLesson: "Neue Lektion",
+    nounLesson: "Lektion",
+    confirmDeleteLesson: "Diese Lektion samt aller Fragen löschen?",
+    body: "Inhalt",
+    videoUrl: "Video-URL (optional)",
+    skill: "Fertigkeit",
+    durationMin: "Dauer (Min.)",
+    freePreview: "kostenlose Vorschau",
+    freePreviewLabel: "Kostenlose Vorschau",
+    questionsLabel: "Fragen",
+    addQuestion: "Frage hinzufügen",
+    saveLessonFirst: "Speichern Sie zuerst die Lektion",
+    noQuestions: "Noch keine Fragen.",
+    newQuestion: "Neue Frage",
+    nounQuestion: "Frage",
+    confirmDeleteQuestion: "Diese Frage löschen?",
+    type: "Typ",
+    points: "Punkte",
+    pointsShort: "Pkt",
+    prompt: "Fragestellung / Aussage",
+    typeMc: "Multiple Choice",
+    typeJnl: "Ja / Nein / Nichts",
+    typeMatch: "Zuordnung (Paare)",
+    options: "Optionen",
+    optionsHint:
+      "Leere Optionen werden beim Speichern verworfen. Markieren Sie die richtige Option mit dem Radioknopf.",
+    correctAria: (letter: string) => `Richtige Antwort ${letter}`,
+    correctAnswer: "Richtige Antwort",
+    pairs: "Paare",
+    pairsHint:
+      "Linke Einträge werden dem gleichnummerierten rechten Eintrag zugeordnet (1→1, 2→2, …). Alle Paare müssen vollständig sein.",
+    leftN: (n: number) => `Links ${n}`,
+    rightN: (n: number) => `Rechts ${n}`,
+    noModules: "Noch keine Module für diesen Kurs. Fügen Sie unten das erste hinzu.",
+    addModule: "Modul hinzufügen",
+  },
+  fa: {
+    headingPrefix: "سرفصل‌های کلاس",
+    subtitle:
+      "ماژول‌ها، درس‌ها و پرسش‌های این کلاس را اینجا مدیریت کنید. پیش از افزودن مورد فرزند، ابتدا مورد والد را ذخیره کنید.",
+    save: "ذخیره",
+    delete: "حذف",
+    remove: "حذف",
+    unsaved: "ذخیره‌نشده",
+    savedToast: "ذخیره شد.",
+    deletedToast: "حذف شد.",
+    actionFailed: "انجام عملیات ناموفق بود",
+    failures: {
+      unauthorized: "اجازهٔ انجام این تغییر را ندارید.",
+      invalid_input:
+        "فیلدها را بررسی کنید: متن فارسی الزامی است، نشانیها باید معتبر باشند و جفت‌های تطبیق باید کامل باشند.",
+      delete_failed: "سرور نتوانست این مورد را حذف کند.",
+    } as Record<string, string>,
+    newModule: "ماژول جدید",
+    nounModule: "ماژول",
+    confirmDeleteModule: "این ماژول همراه با همه درس‌ها و پرسش‌هایش حذف شود؟",
+    title: "عنوان",
+    sortOrder: "ترتیب",
+    lessonsLabel: "درس‌ها",
+    addLesson: "افزودن درس",
+    saveModuleFirst: "ابتدا ماژول را ذخیره کنید",
+    noLessons: "هنوز درسی افزوده نشده است.",
+    newLesson: "درس جدید",
+    nounLesson: "درس",
+    confirmDeleteLesson: "این درس همراه با همه پرسش‌هایش حذف شود؟",
+    body: "متن درس",
+    videoUrl: "لینک ویدیو (اختیاری)",
+    skill: "مهارت",
+    durationMin: "مدت (دقیقه)",
+    freePreview: "پیش‌نمایش رایگان",
+    freePreviewLabel: "پیش‌نمایش رایگان",
+    questionsLabel: "پرسش‌ها",
+    addQuestion: "افزودن پرسش",
+    saveLessonFirst: "ابتدا درس را ذخیره کنید",
+    noQuestions: "هنوز پرسشی افزوده نشده است.",
+    newQuestion: "پرسش جدید",
+    nounQuestion: "پرسش",
+    confirmDeleteQuestion: "این پرسش حذف شود؟",
+    type: "نوع پرسش",
+    points: "امتیاز",
+    pointsShort: "امتیاز",
+    prompt: "متن پرسش",
+    typeMc: "چندگزینه‌ای",
+    typeJnl: "Ja / Nein / Nichts",
+    typeMatch: "تطبیق جفت‌ها",
+    options: "گزینه‌ها",
+    optionsHint:
+      "گزینه‌های خالی هنگام ذخیره حذف می‌شوند. گزینه درست را با دکمهٔ رادیویی مشخص کنید.",
+    correctAria: (letter: string) => `گزینه درست ${letter}`,
+    correctAnswer: "پاسخ درست",
+    pairs: "جفت‌ها",
+    pairsHint:
+      "هر مورد در ستون چپ به مورد هم‌شمارهٔ خود در ستون راست وصل می‌شود (۱→۱، ۲→۲، …). تکمیل همه جفت‌ها الزامی است.",
+    leftN: (n: number) => `چپ ${n}`,
+    rightN: (n: number) => `راست ${n}`,
+    noModules: "هنوز ماژولی برای این کلاس ساخته نشده است. اولین ماژول را در پایین صفحه اضافه کنید.",
+    addModule: "افزودن ماژول",
+  },
+} as const;
+
+type UiContent = (typeof ui)[keyof typeof ui];
+
+// --- Result toast mapping ---
 
 function reportResult(
   toast: ReturnType<typeof useToast>["toast"],
   result: ActionResult,
+  t: UiContent,
   deletedNoun?: string
 ): void {
   if (result.success) {
-    toast({ title: result.message === "deleted" ? `${deletedNoun ?? "Item"} deleted.` : "Saved." });
+    toast({
+      title:
+        result.message === "deleted"
+          ? `${deletedNoun ?? ""} ${t.deletedToast}`.trim()
+          : t.savedToast,
+    });
     return;
   }
   toast({
     variant: "destructive",
-    title: "Action failed",
-    description: FAILURE_DESCRIPTIONS[result.message] ?? result.message,
+    title: t.actionFailed,
+    description: t.failures[result.message] ?? result.message,
   });
 }
 
@@ -302,6 +497,8 @@ interface ModuleCardProps {
 function ModuleCard({ moduleNode, classSlug, onPatch, onRemove, onAddLesson, renderLesson }: ModuleCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [isPending, startTransition] = useTransition();
 
   const handleSave = () => {
@@ -316,7 +513,7 @@ function ModuleCard({ moduleNode, classSlug, onPatch, onRemove, onAddLesson, ren
     startTransition(() => {
       void (async () => {
         const result = await upsertLmsModule(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           if (result.id && !moduleNode.id) onPatch({ id: result.id });
           router.refresh();
@@ -326,7 +523,7 @@ function ModuleCard({ moduleNode, classSlug, onPatch, onRemove, onAddLesson, ren
   };
 
   const handleDelete = () => {
-    if (!moduleNode.id || !window.confirm("Delete this module with all its lessons and questions?")) return;
+    if (!moduleNode.id || !window.confirm(t.confirmDeleteModule)) return;
     const fd = new FormData();
     fd.set("id", moduleNode.id);
     fd.set("classSlug", classSlug);
@@ -334,7 +531,7 @@ function ModuleCard({ moduleNode, classSlug, onPatch, onRemove, onAddLesson, ren
     startTransition(() => {
       void (async () => {
         const result = await deleteLmsModule(fd);
-        reportResult(toast, result, "Module");
+        reportResult(toast, result, t, t.nounModule);
         if (result.success) router.refresh();
       })();
     });
@@ -344,24 +541,24 @@ function ModuleCard({ moduleNode, classSlug, onPatch, onRemove, onAddLesson, ren
     <Card className="border-2">
       <CardHeader className="flex-row items-start justify-between space-y-0">
         <CardTitle className="text-base">
-          {moduleNode.title.fa || moduleNode.title.en || "New module"}
+          {moduleNode.title.fa || moduleNode.title.en || t.newModule}
           {!moduleNode.id && (
-            <span className="ms-2 align-middle text-xs font-normal text-muted-foreground">unsaved</span>
+            <span className="ms-2 align-middle text-xs font-normal text-muted-foreground">{t.unsaved}</span>
           )}
         </CardTitle>
         <div className="flex gap-2">
           <Button size="sm" onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Save
+            {t.save}
           </Button>
           {moduleNode.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
-              Delete
+              {t.delete}
             </Button>
           ) : (
             <Button size="sm" variant="outline" onClick={onRemove} disabled={isPending}>
-              Remove
+              {t.remove}
             </Button>
           )}
         </div>
@@ -369,13 +566,13 @@ function ModuleCard({ moduleNode, classSlug, onPatch, onRemove, onAddLesson, ren
       <CardContent className="space-y-4">
         <LangFields
           idPrefix={`module-${moduleNode.key}-title`}
-          label="Title"
+          label={t.title}
           value={moduleNode.title}
           onChange={(title) => onPatch({ title })}
         />
         <NumberField
           id={`module-${moduleNode.key}-sort`}
-          label="Sort order"
+          label={t.sortOrder}
           value={moduleNode.sortOrder}
           onChange={(sortOrder) => onPatch({ sortOrder })}
           min={0}
@@ -383,20 +580,22 @@ function ModuleCard({ moduleNode, classSlug, onPatch, onRemove, onAddLesson, ren
 
         <div className="space-y-2 rounded-lg border border-dashed p-3">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium">Lessons ({moduleNode.lessons.length})</div>
+            <div className="text-sm font-medium">
+              {t.lessonsLabel} ({moduleNode.lessons.length})
+            </div>
             <Button
               size="sm"
               variant="outline"
               onClick={onAddLesson}
               disabled={!moduleNode.id}
-              title={moduleNode.id ? undefined : "Save the module first"}
+              title={moduleNode.id ? undefined : t.saveModuleFirst}
             >
               <Plus className="me-1 h-4 w-4" />
-              Add lesson
+              {t.addLesson}
             </Button>
           </div>
           {moduleNode.lessons.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No lessons yet.</p>
+            <p className="text-sm text-muted-foreground">{t.noLessons}</p>
           ) : (
             <div className="space-y-2">
               {moduleNode.lessons.map(renderLesson)}
@@ -422,6 +621,8 @@ interface LessonCardProps {
 function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, renderQuestion }: LessonCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -445,7 +646,7 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
     startTransition(() => {
       void (async () => {
         const result = await upsertLmsLesson(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           if (result.id && !lesson.id) onPatch({ id: result.id });
           router.refresh();
@@ -455,7 +656,7 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
   };
 
   const handleDelete = () => {
-    if (!lesson.id || !window.confirm("Delete this lesson with all its questions?")) return;
+    if (!lesson.id || !window.confirm(t.confirmDeleteLesson)) return;
     const fd = new FormData();
     fd.set("id", lesson.id);
     fd.set("classSlug", classSlug);
@@ -463,7 +664,7 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
     startTransition(() => {
       void (async () => {
         const result = await deleteLmsLesson(fd);
-        reportResult(toast, result, "Lesson");
+        reportResult(toast, result, t, t.nounLesson);
         if (result.success) router.refresh();
       })();
     });
@@ -473,38 +674,38 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
     <CollapsibleSection
       open={open}
       onToggle={() => setOpen((v) => !v)}
-      title={lesson.title.fa || lesson.title.en || "New lesson"}
-      subtitle={`${lesson.skill}${lesson.isFreePreview ? " · free preview" : ""}${
-        !lesson.id ? " · unsaved" : ""
-      }`}
+      title={lesson.title.fa || lesson.title.en || t.newLesson}
+      subtitle={`${SKILL_LABELS[lesson.skill][language]}${
+        lesson.isFreePreview ? ` · ${t.freePreview}` : ""
+      }${!lesson.id ? ` · ${t.unsaved}` : ""}`}
     >
       <div className="space-y-4">
         <div className="flex flex-wrap justify-end gap-2">
           <Button size="sm" onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Save lesson
+            {t.save}
           </Button>
           {lesson.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
-              Delete lesson
+              {t.delete}
             </Button>
           ) : (
             <Button size="sm" variant="outline" onClick={onRemove} disabled={isPending}>
-              Remove
+              {t.remove}
             </Button>
           )}
         </div>
 
         <LangFields
           idPrefix={`lesson-${lesson.key}-title`}
-          label="Title"
+          label={t.title}
           value={lesson.title}
           onChange={(title) => onPatch({ title })}
         />
         <LangFields
           idPrefix={`lesson-${lesson.key}-body`}
-          label="Body"
+          label={t.body}
           value={lesson.body}
           onChange={(body) => onPatch({ body })}
           multiline
@@ -513,7 +714,7 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor={`lesson-${lesson.key}-video`}>Video URL (optional)</Label>
+            <Label htmlFor={`lesson-${lesson.key}-video`}>{t.videoUrl}</Label>
             <Input
               id={`lesson-${lesson.key}-video`}
               type="url"
@@ -523,7 +724,7 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor={`lesson-${lesson.key}-skill`}>Skill</Label>
+            <Label htmlFor={`lesson-${lesson.key}-skill`}>{t.skill}</Label>
             <Select value={lesson.skill} onValueChange={(skill) => onPatch({ skill: skill as LmsSkill })}>
               <SelectTrigger id={`lesson-${lesson.key}-skill`}>
                 <SelectValue />
@@ -531,7 +732,7 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
               <SelectContent>
                 {SKILLS.map((skill) => (
                   <SelectItem key={skill} value={skill}>
-                    {skill}
+                    {SKILL_LABELS[skill][language]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -539,7 +740,7 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
           </div>
           <NumberField
             id={`lesson-${lesson.key}-duration`}
-            label="Duration (min)"
+            label={t.durationMin}
             value={lesson.durationMin}
             onChange={(durationMin) => onPatch({ durationMin })}
             min={0}
@@ -553,11 +754,11 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
               checked={lesson.isFreePreview}
               onCheckedChange={(checked) => onPatch({ isFreePreview: checked === true })}
             />
-            <Label htmlFor={`lesson-${lesson.key}-free`}>Free preview</Label>
+            <Label htmlFor={`lesson-${lesson.key}-free`}>{t.freePreviewLabel}</Label>
           </div>
           <NumberField
             id={`lesson-${lesson.key}-sort`}
-            label="Sort order"
+            label={t.sortOrder}
             value={lesson.sortOrder}
             onChange={(sortOrder) => onPatch({ sortOrder })}
             min={0}
@@ -566,20 +767,22 @@ function LessonCard({ lesson, classSlug, onPatch, onRemove, onAddQuestion, rende
 
         <div className="space-y-2 rounded-lg border border-dashed p-3">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium">Questions ({lesson.questions.length})</div>
+            <div className="text-sm font-medium">
+              {t.questionsLabel} ({lesson.questions.length})
+            </div>
             <Button
               size="sm"
               variant="outline"
               onClick={onAddQuestion}
               disabled={!lesson.id}
-              title={lesson.id ? undefined : "Save the lesson first"}
+              title={lesson.id ? undefined : t.saveLessonFirst}
             >
               <Plus className="me-1 h-4 w-4" />
-              Add question
+              {t.addQuestion}
             </Button>
           </div>
           {lesson.questions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No questions yet.</p>
+            <p className="text-sm text-muted-foreground">{t.noQuestions}</p>
           ) : (
             <div className="space-y-2">
               {lesson.questions.map(renderQuestion)}
@@ -603,8 +806,13 @@ interface QuestionCardProps {
 function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = ui[language];
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const questionTypeLabel = (type: EditorQuestionType) =>
+    type === "mc" ? t.typeMc : type === "jnl" ? t.typeJnl : t.typeMatch;
 
   const handleTypeChange = (type: string) => {
     const nextType = type as EditorQuestionType;
@@ -654,7 +862,7 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
     startTransition(() => {
       void (async () => {
         const result = await upsertLmsQuestion(fd);
-        reportResult(toast, result);
+        reportResult(toast, result, t);
         if (result.success) {
           if (result.id && !question.id) onPatch({ id: result.id });
           router.refresh();
@@ -664,7 +872,7 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
   };
 
   const handleDelete = () => {
-    if (!question.id || !window.confirm("Delete this question?")) return;
+    if (!question.id || !window.confirm(t.confirmDeleteQuestion)) return;
     const fd = new FormData();
     fd.set("id", question.id);
     fd.set("classSlug", classSlug);
@@ -672,45 +880,45 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
     startTransition(() => {
       void (async () => {
         const result = await deleteLmsQuestion(fd);
-        reportResult(toast, result, "Question");
+        reportResult(toast, result, t, t.nounQuestion);
         if (result.success) router.refresh();
       })();
     });
   };
 
   const promptSnippet =
-    question.prompt.fa || question.prompt.en || question.prompt.de || "New question";
+    question.prompt.fa || question.prompt.en || question.prompt.de || t.newQuestion;
 
   return (
     <CollapsibleSection
       open={open}
       onToggle={() => setOpen((v) => !v)}
       title={promptSnippet}
-      subtitle={`${question.type.toUpperCase()} · ${question.points || "1"} pt${
-        !question.id ? " · unsaved" : ""
+      subtitle={`${question.type.toUpperCase()} · ${question.points || "1"} ${t.pointsShort}${
+        !question.id ? ` · ${t.unsaved}` : ""
       }`}
     >
       <div className="space-y-4">
         <div className="flex flex-wrap justify-end gap-2">
           <Button size="sm" onClick={handleSave} disabled={isPending}>
             {isPending ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Save className="me-1 h-4 w-4" />}
-            Save question
+            {t.save}
           </Button>
           {question.id ? (
             <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isPending}>
               <Trash2 className="me-1 h-4 w-4" />
-              Delete question
+              {t.delete}
             </Button>
           ) : (
             <Button size="sm" variant="outline" onClick={onRemove} disabled={isPending}>
-              Remove
+              {t.remove}
             </Button>
           )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1">
-            <Label>Type</Label>
+            <Label>{t.type}</Label>
             <Select value={question.type} onValueChange={handleTypeChange}>
               <SelectTrigger>
                 <SelectValue />
@@ -718,7 +926,7 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
               <SelectContent>
                 {QUESTION_TYPES.map((type) => (
                   <SelectItem key={type} value={type}>
-                    {type === "mc" ? "Multiple choice" : type === "jnl" ? "Ja / Nein / Nichts" : "Matching pairs"}
+                    {questionTypeLabel(type)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -726,14 +934,14 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
           </div>
           <NumberField
             id={`question-${question.key}-points`}
-            label="Points"
+            label={t.points}
             value={question.points}
             onChange={(points) => onPatch({ points })}
             min={0}
           />
           <NumberField
             id={`question-${question.key}-sort`}
-            label="Sort order"
+            label={t.sortOrder}
             value={question.sortOrder}
             onChange={(sortOrder) => onPatch({ sortOrder })}
             min={0}
@@ -742,7 +950,7 @@ function QuestionCard({ question, classSlug, onPatch, onRemove }: QuestionCardPr
 
         <LangFields
           idPrefix={`question-${question.key}-prompt`}
-          label="Prompt / statement"
+          label={t.prompt}
           value={question.prompt}
           onChange={(prompt) => onPatch({ prompt })}
           multiline
@@ -772,6 +980,9 @@ function McSubForm({
   questionKey: string;
   onChange: (next: QuestionData) => void;
 }) {
+  const { language } = useLanguage();
+  const t = ui[language];
+
   const setCount = (delta: number) => {
     const optionCount = Math.min(Math.max(data.optionCount + delta, 1), LETTERS.length);
     onChange({ ...data, optionCount });
@@ -780,7 +991,7 @@ function McSubForm({
   return (
     <div className="space-y-2 rounded-lg border border-dashed p-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium">Options</div>
+        <div className="text-sm font-medium">{t.options}</div>
         <div className="flex items-center gap-1">
           <Button type="button" size="icon" variant="outline" className="h-7 w-7" onClick={() => setCount(-1)} disabled={data.optionCount <= 1}>
             −
@@ -791,9 +1002,7 @@ function McSubForm({
           </Button>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Empty options are dropped on save. Mark the correct one with the radio button.
-      </p>
+      <p className="text-xs text-muted-foreground">{t.optionsHint}</p>
       {LETTERS.slice(0, data.optionCount).map((letter, i) => {
         const text = data.texts[i];
         if (!text) return null;
@@ -805,7 +1014,7 @@ function McSubForm({
                 name={`correct-${questionKey}`}
                 checked={data.correct === letter}
                 onChange={() => onChange({ ...data, correct: letter })}
-                aria-label={`Correct answer ${letter}`}
+                aria-label={t.correctAria(letter)}
                 className="h-4 w-4"
               />
               {letter.toUpperCase()}
@@ -820,7 +1029,7 @@ function McSubForm({
                   onChange={(e) =>
                     onChange({
                       ...data,
-                      texts: data.texts.map((t, j) => (j === i ? { ...t, [lang]: e.target.value } : t)),
+                      texts: data.texts.map((entry, j) => (j === i ? { ...entry, [lang]: e.target.value } : entry)),
                     })
                   }
                 />
@@ -840,9 +1049,12 @@ function JnlSubForm({
   data: JnlState;
   onChange: (next: QuestionData) => void;
 }) {
+  const { language } = useLanguage();
+  const t = ui[language];
+
   return (
     <div className="space-y-1 rounded-lg border border-dashed p-3 sm:w-64">
-      <Label>Correct answer</Label>
+      <Label>{t.correctAnswer}</Label>
       <Select value={data.correct} onValueChange={(correct) => onChange({ kind: "jnl", correct: correct as JnlValue })}>
         <SelectTrigger>
           <SelectValue />
@@ -866,6 +1078,9 @@ function MatchSubForm({
   data: MatchState;
   onChange: (next: QuestionData) => void;
 }) {
+  const { language } = useLanguage();
+  const t = ui[language];
+
   const setCount = (delta: number) => {
     const pairCount = Math.min(Math.max(data.pairCount + delta, 1), INDICES.length);
     onChange({ ...data, pairCount });
@@ -874,7 +1089,7 @@ function MatchSubForm({
   return (
     <div className="space-y-2 rounded-lg border border-dashed p-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium">Pairs</div>
+        <div className="text-sm font-medium">{t.pairs}</div>
         <div className="flex items-center gap-1">
           <Button type="button" size="icon" variant="outline" className="h-7 w-7" onClick={() => setCount(-1)} disabled={data.pairCount <= 1}>
             −
@@ -885,9 +1100,7 @@ function MatchSubForm({
           </Button>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Left items map to their same-numbered right item (1→1, 2→2, …). All pairs must be complete.
-      </p>
+      <p className="text-xs text-muted-foreground">{t.pairsHint}</p>
       {INDICES.slice(0, data.pairCount).map((i) => {
         const left = data.left[i];
         const right = data.right[i];
@@ -895,7 +1108,7 @@ function MatchSubForm({
         return (
           <div key={i} className="grid gap-2 rounded-md border p-2 md:grid-cols-2">
             <div>
-              <div className="mb-1 text-xs font-medium text-muted-foreground">Left {i + 1}</div>
+              <div className="mb-1 text-xs font-medium text-muted-foreground">{t.leftN(i + 1)}</div>
               <div className="grid gap-1 sm:grid-cols-3">
                 {LANGS.map((lang) => (
                   <Input
@@ -906,7 +1119,7 @@ function MatchSubForm({
                     onChange={(e) =>
                       onChange({
                         ...data,
-                        left: data.left.map((t, j) => (j === i ? { ...t, [lang]: e.target.value } : t)),
+                        left: data.left.map((entry, j) => (j === i ? { ...entry, [lang]: e.target.value } : entry)),
                       })
                     }
                   />
@@ -914,7 +1127,7 @@ function MatchSubForm({
               </div>
             </div>
             <div>
-              <div className="mb-1 text-xs font-medium text-muted-foreground">Right {i + 1}</div>
+              <div className="mb-1 text-xs font-medium text-muted-foreground">{t.rightN(i + 1)}</div>
               <div className="grid gap-1 sm:grid-cols-3">
                 {LANGS.map((lang) => (
                   <Input
@@ -925,7 +1138,7 @@ function MatchSubForm({
                     onChange={(e) =>
                       onChange({
                         ...data,
-                        right: data.right.map((t, j) => (j === i ? { ...t, [lang]: e.target.value } : t)),
+                        right: data.right.map((entry, j) => (j === i ? { ...entry, [lang]: e.target.value } : entry)),
                       })
                     }
                   />
@@ -943,12 +1156,18 @@ function MatchSubForm({
 
 export function LmsEditor({
   classSlug,
+  classTitle,
   initialTree,
 }: {
   classSlug: string;
+  classTitle: LocalizedString;
   initialTree: EditorModule[];
 }) {
+  const { language } = useLanguage();
+  const t = ui[language];
   const [modules, setModules] = useState<EditorModule[]>(initialTree);
+
+  const displayTitle = classTitle[language] || classTitle.fa || classTitle.en;
 
   const patchModule = useCallback((key: string, patch: Partial<EditorModule>) => {
     setModules((prev) => prev.map((m) => (m.key === key ? { ...m, ...patch } : m)));
@@ -1036,10 +1255,20 @@ export function LmsEditor({
 
   return (
     <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t.headingPrefix} · {displayTitle}
+        </h1>
+        <p className="text-muted-foreground">{t.subtitle}</p>
+      </div>
+
       {modules.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-          No modules yet for this class. Add the first one below.
-        </p>
+        <EmptyState
+          icon={FolderOpen}
+          en={ui.en.noModules}
+          de={ui.de.noModules}
+          fa={ui.fa.noModules}
+        />
       ) : (
         modules.map((moduleNode) => (
           <ModuleCard
@@ -1074,7 +1303,7 @@ export function LmsEditor({
 
       <Button variant="outline" onClick={addModule}>
         <Plus className="me-1 h-4 w-4" />
-        Add module
+        {t.addModule}
       </Button>
     </div>
   );
